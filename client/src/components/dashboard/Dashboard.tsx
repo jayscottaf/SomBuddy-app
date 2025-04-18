@@ -41,13 +41,21 @@ export interface DashboardData {
   workoutLog: any;
 }
 
-export function Dashboard() {
+export interface DashboardProps {
+  demoData?: DashboardData;
+}
+
+export function Dashboard({ demoData }: DashboardProps) {
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const { toast } = useToast();
 
-  const { data, isLoading, error } = useQuery<DashboardData>({
+  const { data: fetchedData, isLoading, error } = useQuery<DashboardData>({
     queryKey: ['/api/dashboard'],
+    enabled: !demoData, // Don't run the query if we have demo data
   });
+  
+  // Use demo data if provided, otherwise use fetched data
+  const data = demoData || fetchedData;
 
   useEffect(() => {
     if (error) {
@@ -130,7 +138,7 @@ export function Dashboard() {
               title="Daily Calories" 
               value={data?.stats?.currentCalories || 0}
               target={data?.stats?.tdee || 2000}
-              status={data?.stats?.calorieProgress > 80 ? "on-track" : "low"}
+              status={(data?.stats?.calorieProgress || 0) > 80 ? "on-track" : "low"}
               progress={data?.stats?.calorieProgress || 0}
             />
             
@@ -138,7 +146,7 @@ export function Dashboard() {
               title="Protein" 
               value={`${data?.stats?.currentProtein || 0}g`}
               target={`${data?.stats?.macros?.protein || 150}g`}
-              status={data?.stats?.proteinProgress > 80 ? "on-track" : "low"}
+              status={(data?.stats?.proteinProgress || 0) > 80 ? "on-track" : "low"}
               progress={data?.stats?.proteinProgress || 0}
             />
             
@@ -146,7 +154,7 @@ export function Dashboard() {
               title="Daily Steps" 
               value={data?.stats?.currentSteps || 0}
               target={10000}
-              status={data?.stats?.stepsProgress > 80 ? "great" : "on-track"}
+              status={(data?.stats?.stepsProgress || 0) > 80 ? "great" : "on-track"}
               progress={data?.stats?.stepsProgress || 0}
             />
             

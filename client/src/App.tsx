@@ -13,8 +13,13 @@ import WorkoutPage from "@/pages/dashboard/workout";
 import ProfilePage from "@/pages/dashboard/profile";
 import { useAuth } from "./context/auth-context";
 import { OnboardingView } from "./components/onboarding/OnboardingView";
+import DemoPage from "./components/dashboard/DemoPage";
 import { useEffect } from "react";
 import { useLocation } from "wouter";
+
+// Create a context for demo mode
+import { createContext } from 'react';
+export const DemoModeContext = createContext<boolean>(false);
 
 function Router() {
   const { isAuthenticated, isOnboarding, checkAuth } = useAuth();
@@ -24,56 +29,68 @@ function Router() {
   const isDemoMode = location.includes('demo=true');
 
   useEffect(() => {
-    const checkAuthentication = async () => {
-      await checkAuth();
+    // Only run authentication checks if not in demo mode
+    if (!isDemoMode) {
+      const checkAuthentication = async () => {
+        await checkAuth();
+        
+        // Redirect if on protected page and not authenticated
+        const protectedPaths = [
+          '/dashboard',
+          '/dashboard/nutrition',
+          '/dashboard/workout',
+          '/dashboard/profile',
+          '/dashboard/settings',
+          '/dashboard/plan'
+        ];
+        
+        if (!isAuthenticated && protectedPaths.some(path => location.startsWith(path))) {
+          setLocation('/auth/login');
+        }
+        
+        // Redirect to dashboard if authenticated and not on onboarding
+        if (isAuthenticated && !isOnboarding && location === '/') {
+          setLocation('/dashboard');
+        }
+      };
       
-      // Skip authentication checks if in demo mode
-      if (isDemoMode) return;
-      
-      // Redirect if on protected page and not authenticated
-      const protectedPaths = [
-        '/dashboard',
-        '/dashboard/nutrition',
-        '/dashboard/workout',
-        '/dashboard/profile',
-        '/dashboard/settings',
-        '/dashboard/plan'
-      ];
-      
-      if (!isAuthenticated && protectedPaths.some(path => location.startsWith(path))) {
-        setLocation('/auth/login');
-      }
-      
-      // Redirect to dashboard if authenticated and not on onboarding
-      if (isAuthenticated && !isOnboarding && location === '/') {
-        setLocation('/dashboard');
-      }
-    };
-    
-    checkAuthentication();
+      checkAuthentication();
+    }
   }, [checkAuth, isAuthenticated, isOnboarding, location, setLocation, isDemoMode]);
 
-  // Demo mode banner
-  const DemoBanner = () => (
-    <div className="bg-yellow-100 text-yellow-800 px-4 py-2 text-center">
-      Demo Mode: This is a preview of the Layover Fuel dashboard with the new meal photo analysis feature.
-    </div>
-  );
-
   return (
-    <>
-      {isDemoMode && <DemoBanner />}
+    <DemoModeContext.Provider value={isDemoMode}>
       <Switch>
-        <Route path="/" component={() => isAuthenticated && isOnboarding ? <OnboardingView /> : <Login />} />
+        {/* Special case for demo mode */}
+        <Route path="/demo" component={DemoPage} />
+        
+        {/* Regular routes with demo option */}
+        <Route path="/" component={() => {
+          if (isDemoMode) return <DemoPage />;
+          if (isAuthenticated && isOnboarding) return <OnboardingView />;
+          return <Login />;
+        }} />
         <Route path="/auth/register" component={Register} />
         <Route path="/auth/login" component={Login} />
-        <Route path="/dashboard" component={isDemoMode ? DashboardPage : (isAuthenticated ? DashboardPage : Login)} />
-        <Route path="/dashboard/nutrition" component={isDemoMode ? NutritionPage : (isAuthenticated ? NutritionPage : Login)} />
-        <Route path="/dashboard/workout" component={isDemoMode ? WorkoutPage : (isAuthenticated ? WorkoutPage : Login)} />
-        <Route path="/dashboard/profile" component={isDemoMode ? ProfilePage : (isAuthenticated ? ProfilePage : Login)} />
+        <Route path="/dashboard" component={() => {
+          if (isDemoMode) return <DemoPage />;
+          return isAuthenticated ? <DashboardPage /> : <Login />;
+        }} />
+        <Route path="/dashboard/nutrition" component={() => {
+          if (isDemoMode) return <DemoPage />;
+          return isAuthenticated ? <NutritionPage /> : <Login />;
+        }} />
+        <Route path="/dashboard/workout" component={() => {
+          if (isDemoMode) return <DemoPage />;
+          return isAuthenticated ? <WorkoutPage /> : <Login />;
+        }} />
+        <Route path="/dashboard/profile" component={() => {
+          if (isDemoMode) return <DemoPage />;
+          return isAuthenticated ? <ProfilePage /> : <Login />;
+        }} />
         <Route component={NotFound} />
       </Switch>
-    </>
+    </DemoModeContext.Provider>
   );
 }
 
