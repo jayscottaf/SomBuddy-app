@@ -1,0 +1,507 @@
+import type { Express, Request, Response } from "express";
+import { createServer, type Server } from "http";
+import { storage } from "./storage";
+import session from "express-session";
+import bcrypt from "bcryptjs";
+import { z } from "zod";
+import { registerSchema, loginSchema, onboardingSchema } from "@shared/schema";
+import { 
+  calculateTDEE, 
+  calculateMacros 
+} from "./services/tdee-service";
+import { 
+  processOnboardingMessage, 
+  generateDailyMotivation,
+  processFeedback,
+  type OnboardingQuestion 
+} from "./services/openai-service";
+import { generateMealPlan } from "./services/meal-service";
+import { generateWorkoutPlan } from "./services/workout-service";
+
+declare module "express-session" {
+  interface SessionData {
+    userId: number;
+    onboarding?: {
+      currentQuestion: OnboardingQuestion;
+      userData: any;
+    };
+  }
+}
+
+export async function registerRoutes(app: Express): Promise<Server> {
+  // Setup session middleware
+  app.use(
+    session({
+      secret: process.env.SESSION_SECRET || "layover-fuel-secret",
+      resave: false,
+      saveUninitialized: false,
+      cookie: {
+        secure: process.env.NODE_ENV === "production",
+        maxAge: 1000 * 60 * 60 * 24 * 7, // 1 week
+      },
+    })
+  );
+
+  // Auth Routes
+  app.post("/api/auth/register", async (req: Request, res: Response) => {
+    try {
+      const data = registerSchema.parse(req.body);
+      
+      // Check if user already exists
+      const existingUser = await storage.getUserByEmail(data.email);
+      if (existingUser) {
+        return res.status(400).json({ message: "User already exists" });
+      }
+      
+      // Hash password
+      const salt = await bcrypt.genSalt(10);
+      const hashedPassword = await bcrypt.hash(data.password, salt);
+      
+      // Create user
+      const user = await storage.createUser({
+        email: data.email,
+        password: hashedPassword,
+        name: "",
+      });
+      
+      // Start onboarding
+      req.session.userId = user.id;
+      req.session.onboarding = {
+        currentQuestion: {
+          text: "Hi there! I'm your Layover Fuel fitness coach. I'll help you stay fit while traveling. Let's get to know each other better. What's your name?",
+          field: "name",
+        },
+        userData: {},
+      };
+      
+      res.status(201).json({ message: "User created", userId: user.id });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid input", errors: error.errors });
+      }
+      res.status(500).json({ message: "Server error" });
+    }
+  });
+
+  app.post("/api/auth/login", async (req: Request, res: Response) => {
+    try {
+      const data = loginSchema.parse(req.body);
+      
+      // Find user
+      const user = await storage.getUserByEmail(data.email);
+      if (!user) {
+        return res.status(400).json({ message: "Invalid email or password" });
+      }
+      
+      // Check password
+      const isMatch = await bcrypt.compare(data.password, user.password);
+      if (!isMatch) {
+        return res.status(400).json({ message: "Invalid email or password" });
+      }
+      
+      // Set session
+      req.session.userId = user.id;
+      
+      // Check if user has completed onboarding
+      const isOnboardingComplete = Boolean(user.name && user.age && user.heightCm && user.weightKg);
+      
+      if (!isOnboardingComplete) {
+        req.session.onboarding = {
+          currentQuestion: {
+            text: "Welcome back! Let's continue where we left off. What's your name?",
+            field: "name",
+          },
+          userData: {},
+        };
+      }
+      
+      res.status(200).json({ 
+        message: "Login successful", 
+        userId: user.id,
+        isOnboardingComplete
+      });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid input", errors: error.errors });
+      }
+      res.status(500).json({ message: "Server error" });
+    }
+  });
+
+  app.post("/api/auth/logout", (req: Request, res: Response) => {
+    req.session.destroy((err) => {
+      if (err) {
+        return res.status(500).json({ message: "Could not log out" });
+      }
+      res.status(200).json({ message: "Logout successful" });
+    });
+  });
+
+  // Onboarding Routes
+  app.get("/api/onboarding/current-question", (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    
+    const onboarding = req.session.onboarding;
+    if (!onboarding) {
+      return res.status(400).json({ message: "No onboarding in progress" });
+    }
+    
+    res.status(200).json({ question: onboarding.currentQuestion });
+  });
+
+  app.post("/api/onboarding/message", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    
+    const { message } = req.body;
+    if (!message) {
+      return res.status(400).json({ message: "Message is required" });
+    }
+    
+    const onboarding = req.session.onboarding;
+    if (!onboarding) {
+      return res.status(400).json({ message: "No onboarding in progress" });
+    }
+    
+    try {
+      const response = await processOnboardingMessage(
+        message,
+        onboarding.currentQuestion,
+        onboarding.userData
+      );
+      
+      // Update session with the new data
+      req.session.onboarding.userData = {
+        ...onboarding.userData,
+        [response.field]: response.value,
+      };
+      
+      // If there's a next question, update it
+      if (response.nextQuestion) {
+        req.session.onboarding.currentQuestion = response.nextQuestion;
+      }
+      
+      // If onboarding is complete, save user data
+      if (response.isComplete) {
+        const userData = req.session.onboarding.userData;
+        
+        // Update user record with all collected data
+        await storage.updateUser(req.session.userId, {
+          name: userData.name,
+          email: userData.email,
+          age: userData.biometrics?.age,
+          heightCm: userData.biometrics?.heightCm,
+          weightKg: userData.biometrics?.weightKg,
+          gender: userData.gender,
+          fitnessGoal: userData.fitnessGoal,
+          activityLevel: userData.activityLevel,
+          dietaryRestrictions: userData.dietaryRestrictions,
+          gymMemberships: userData.gymMemberships,
+          maxCommuteMinutes: userData.maxCommuteMinutes,
+        });
+        
+        // Calculate TDEE and update user
+        const user = await storage.getUser(req.session.userId);
+        if (user) {
+          const tdee = calculateTDEE(user);
+          await storage.updateUser(req.session.userId, { tdee });
+        }
+        
+        // Clear onboarding data from session
+        delete req.session.onboarding;
+      }
+      
+      res.status(200).json({
+        field: response.field,
+        value: response.value,
+        nextQuestion: response.nextQuestion,
+        isComplete: response.isComplete,
+      });
+    } catch (error) {
+      console.error("Onboarding error:", error);
+      res.status(500).json({ message: "Error processing message" });
+    }
+  });
+
+  app.post("/api/onboarding/complete", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    
+    try {
+      const data = onboardingSchema.parse(req.body);
+      
+      // Update user with onboarding data
+      await storage.updateUser(req.session.userId, data);
+      
+      // Calculate TDEE and update user
+      const user = await storage.getUser(req.session.userId);
+      if (user) {
+        const tdee = calculateTDEE(user);
+        await storage.updateUser(req.session.userId, { tdee });
+      }
+      
+      // Clear onboarding data from session if it exists
+      if (req.session.onboarding) {
+        delete req.session.onboarding;
+      }
+      
+      res.status(200).json({ message: "Onboarding completed successfully" });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid input", errors: error.errors });
+      }
+      res.status(500).json({ message: "Server error" });
+    }
+  });
+
+  // User Routes
+  app.get("/api/user/profile", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    
+    try {
+      const user = await storage.getUser(req.session.userId);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      // Don't return password
+      const { password, ...userWithoutPassword } = user;
+      
+      res.status(200).json(userWithoutPassword);
+    } catch (error) {
+      res.status(500).json({ message: "Server error" });
+    }
+  });
+
+  // Dashboard Routes
+  app.get("/api/dashboard", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    
+    try {
+      const user = await storage.getUser(req.session.userId);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      // Calculate nutritional needs based on TDEE
+      const tdee = user.tdee || calculateTDEE(user);
+      const macros = calculateMacros(user, tdee);
+      
+      // Get today's date for logs
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      
+      // Get today's health log if it exists
+      const healthLog = await storage.getHealthLogByDate(user.id, today);
+      
+      // Get today's nutrition log if it exists
+      const nutritionLog = await storage.getNutritionLogByDate(user.id, today);
+      
+      // Get today's workout log if it exists
+      const workoutLog = await storage.getWorkoutLogByDate(user.id, today);
+      
+      // Get today's plan or generate a new one
+      let dailyPlan = await storage.getDailyPlanByDate(user.id, today);
+      
+      if (!dailyPlan) {
+        // Generate a new plan
+        const mealPlan = await generateMealPlan(
+          user,
+          macros.protein,
+          macros.carbs,
+          macros.fat,
+          tdee
+        );
+        
+        const workoutPlan = await generateWorkoutPlan(user);
+        
+        const motivation = await generateDailyMotivation(user);
+        
+        // Create a new daily plan
+        dailyPlan = await storage.createDailyPlan({
+          date: today,
+          userId: user.id,
+          meals: mealPlan,
+          workout: workoutPlan,
+          gymRecommendations: workoutPlan.gymRecommendation,
+          motivation,
+        });
+      }
+      
+      // Calculate progress percentages for stats
+      const proteinProgress = nutritionLog?.protein 
+        ? Math.round((nutritionLog.protein / macros.protein) * 100) 
+        : 0;
+      
+      const calorieProgress = nutritionLog?.calories 
+        ? Math.round((nutritionLog.calories / tdee) * 100) 
+        : 0;
+      
+      // Response with dashboard data
+      res.status(200).json({
+        user: {
+          name: user.name,
+          goal: user.fitnessGoal,
+        },
+        stats: {
+          tdee,
+          macros,
+          currentCalories: nutritionLog?.calories || 0,
+          calorieProgress,
+          currentProtein: nutritionLog?.protein || 0,
+          proteinProgress,
+          currentSteps: healthLog?.steps || 0,
+          stepsProgress: healthLog?.steps ? Math.round((healthLog.steps / 10000) * 100) : 0,
+          water: 0, // Would need to track this separately
+          waterProgress: 0,
+        },
+        dailyPlan,
+        healthLog,
+        nutritionLog,
+        workoutLog,
+      });
+    } catch (error) {
+      console.error("Dashboard error:", error);
+      res.status(500).json({ message: "Server error" });
+    }
+  });
+
+  // Health Log Routes
+  app.post("/api/logs/health", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    
+    try {
+      const { date, ...logData } = req.body;
+      const logDate = date ? new Date(date) : new Date();
+      
+      // Check if a log already exists for this date
+      const existingLog = await storage.getHealthLogByDate(req.session.userId, logDate);
+      
+      let healthLog;
+      if (existingLog) {
+        // Update existing log
+        healthLog = await storage.updateHealthLog(existingLog.id, logData);
+      } else {
+        // Create new log
+        healthLog = await storage.createHealthLog({
+          date: logDate,
+          userId: req.session.userId,
+          ...logData,
+        });
+      }
+      
+      res.status(200).json(healthLog);
+    } catch (error) {
+      res.status(500).json({ message: "Server error" });
+    }
+  });
+
+  // Nutrition Log Routes
+  app.post("/api/logs/nutrition", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    
+    try {
+      const { date, ...logData } = req.body;
+      const logDate = date ? new Date(date) : new Date();
+      
+      // Check if a log already exists for this date
+      const existingLog = await storage.getNutritionLogByDate(req.session.userId, logDate);
+      
+      let nutritionLog;
+      if (existingLog) {
+        // Update existing log
+        nutritionLog = await storage.updateNutritionLog(existingLog.id, logData);
+      } else {
+        // Create new log
+        nutritionLog = await storage.createNutritionLog({
+          date: logDate,
+          userId: req.session.userId,
+          ...logData,
+        });
+      }
+      
+      res.status(200).json(nutritionLog);
+    } catch (error) {
+      res.status(500).json({ message: "Server error" });
+    }
+  });
+
+  // Workout Log Routes
+  app.post("/api/logs/workout", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    
+    try {
+      const { date, ...logData } = req.body;
+      const logDate = date ? new Date(date) : new Date();
+      
+      // Check if a log already exists for this date
+      const existingLog = await storage.getWorkoutLogByDate(req.session.userId, logDate);
+      
+      let workoutLog;
+      if (existingLog) {
+        // Update existing log
+        workoutLog = await storage.updateWorkoutLog(existingLog.id, logData);
+      } else {
+        // Create new log
+        workoutLog = await storage.createWorkoutLog({
+          date: logDate,
+          userId: req.session.userId,
+          ...logData,
+        });
+      }
+      
+      res.status(200).json(workoutLog);
+    } catch (error) {
+      res.status(500).json({ message: "Server error" });
+    }
+  });
+
+  // Feedback Route
+  app.post("/api/feedback", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    
+    try {
+      const { mood, message } = req.body;
+      if (!mood) {
+        return res.status(400).json({ message: "Mood is required" });
+      }
+      
+      const user = await storage.getUser(req.session.userId);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      // Process feedback with AI
+      const feedbackResponse = await processFeedback(
+        `Mood: ${mood}. ${message || ''}`,
+        user
+      );
+      
+      res.status(200).json({ 
+        message: "Feedback received",
+        response: feedbackResponse
+      });
+    } catch (error) {
+      res.status(500).json({ message: "Server error" });
+    }
+  });
+
+  const httpServer = createServer(app);
+  return httpServer;
+}
