@@ -103,6 +103,28 @@ export default function Login() {
           >
             {isSubmitting ? "Signing in..." : "Sign in"}
           </Button>
+          
+          <div className="mt-6 border-t pt-4">
+            <p className="text-sm text-gray-600 text-center mb-3">
+              Want to try our features without signing in?
+            </p>
+            <div className="flex flex-col space-y-2">
+              <Button
+                variant="ghost"
+                className="text-sm text-primary-600 hover:text-primary-800 font-medium"
+                onClick={() => navigate("/tour")}
+              >
+                Take an interactive tour of Layover Fuel
+              </Button>
+              <Button
+                variant="ghost"
+                className="text-sm text-primary-600 hover:text-primary-800 font-medium"
+                onClick={() => navigate("/demo")}
+              >
+                Try our meal photo analysis demo
+              </Button>
+            </div>
+          </div>
         </form>
       </Form>
     </AuthLayout>
