@@ -2,11 +2,15 @@ import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { ImageUpload } from "@/components/ui/image-upload";
 
 export function DailyCheckInCard() {
   const [selectedMood, setSelectedMood] = useState<string | null>(null);
   const [feedbackText, setFeedbackText] = useState("");
   const [aiResponse, setAIResponse] = useState<string | null>(null);
+  const [mealImage, setMealImage] = useState<string | null>(null);
+  const [mealAnalysis, setMealAnalysis] = useState<any | null>(null);
+  const [analyzingImage, setAnalyzingImage] = useState(false);
   const { toast } = useToast();
 
   const { mutate, isPending } = useMutation({
@@ -32,6 +36,50 @@ export function DailyCheckInCard() {
       });
     },
   });
+
+  const mealAnalysisMutation = useMutation({
+    mutationFn: async (imageData: string) => {
+      const response = await apiRequest("POST", "/api/meal-analysis", { imageData });
+      if (!response.ok) {
+        throw new Error("Failed to analyze meal image");
+      }
+      return response.json();
+    },
+    onSuccess: (data) => {
+      setMealAnalysis(data.result);
+      setAnalyzingImage(false);
+      
+      // Add the analysis to the feedback text
+      const analysisText = `
+Meal analysis:
+- Calories: ~${data.result.estimate.calories} kcal
+- Protein: ~${data.result.estimate.protein}g
+- Carbs: ~${data.result.estimate.carbs}g
+- Fat: ~${data.result.estimate.fat}g
+${data.result.analysis}`;
+      
+      setFeedbackText((prev) => 
+        prev ? prev + "\n\n" + analysisText : analysisText
+      );
+    },
+    onError: () => {
+      setAnalyzingImage(false);
+      toast({
+        title: "Analysis Failed",
+        description: "Failed to analyze your meal. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleImageSelect = (file: File, preview: string) => {
+    setMealImage(preview);
+    setAnalyzingImage(true);
+    
+    // Process the image
+    const base64Data = preview.split(',')[1]; // Remove the data URI prefix
+    mealAnalysisMutation.mutate(base64Data);
+  };
 
   const handleSubmit = () => {
     if (!selectedMood) {
@@ -108,14 +156,84 @@ export function DailyCheckInCard() {
           </button>
         </div>
         
-        <textarea
-          className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-          placeholder="Tell us more about your day... (optional)"
-          rows={3}
-          value={feedbackText}
-          onChange={(e) => setFeedbackText(e.target.value)}
-          disabled={isPending}
-        />
+        <div className="relative">
+          <textarea
+            className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+            placeholder="Tell us more about your day... (optional)"
+            rows={3}
+            value={feedbackText}
+            onChange={(e) => setFeedbackText(e.target.value)}
+            disabled={isPending}
+          />
+          <div className="absolute bottom-3 right-3">
+            <ImageUpload 
+              onImageSelect={handleImageSelect}
+              className="text-gray-400 hover:text-primary-500"
+            />
+          </div>
+        </div>
+        
+        {/* Show meal image if uploaded */}
+        {mealImage && (
+          <div className="relative mt-4 p-2 border rounded-lg bg-gray-50">
+            <div className="flex flex-col space-y-2">
+              <div className="flex items-center justify-between">
+                <p className="text-sm font-medium text-gray-700">Meal Photo</p>
+                <button 
+                  onClick={() => {
+                    setMealImage(null); 
+                    setMealAnalysis(null);
+                  }}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                  </svg>
+                </button>
+              </div>
+              
+              <div className="relative">
+                <img src={mealImage} alt="Your meal" className="rounded w-full max-h-48 object-cover" />
+                
+                {analyzingImage && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 rounded">
+                    <div className="animate-pulse text-white flex flex-col items-center">
+                      <svg className="animate-spin h-8 w-8 mb-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      <span>Analyzing...</span>
+                    </div>
+                  </div>
+                )}
+              </div>
+              
+              {mealAnalysis && (
+                <div className="bg-white p-3 rounded-lg border text-sm space-y-2">
+                  <div className="grid grid-cols-4 gap-2 text-center">
+                    <div>
+                      <p className="font-medium">{mealAnalysis.estimate.calories}</p>
+                      <p className="text-xs text-gray-500">calories</p>
+                    </div>
+                    <div>
+                      <p className="font-medium">{mealAnalysis.estimate.protein}g</p>
+                      <p className="text-xs text-gray-500">protein</p>
+                    </div>
+                    <div>
+                      <p className="font-medium">{mealAnalysis.estimate.carbs}g</p>
+                      <p className="text-xs text-gray-500">carbs</p>
+                    </div>
+                    <div>
+                      <p className="font-medium">{mealAnalysis.estimate.fat}g</p>
+                      <p className="text-xs text-gray-500">fat</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
         
         {aiResponse && (
           <div className="bg-primary-50 border border-primary-100 rounded-lg p-4 mt-4">
@@ -134,7 +252,7 @@ export function DailyCheckInCard() {
           <button 
             className="bg-primary-500 hover:bg-primary-600 text-white px-6 py-2 rounded-lg font-medium transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
             onClick={handleSubmit}
-            disabled={isPending || !selectedMood}
+            disabled={isPending || !selectedMood || analyzingImage}
           >
             {isPending ? (
               <div className="flex items-center space-x-2">

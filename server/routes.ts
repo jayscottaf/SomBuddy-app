@@ -17,6 +17,7 @@ import {
 } from "./services/openai-service";
 import { generateMealPlan } from "./services/meal-service";
 import { generateWorkoutPlan } from "./services/workout-service";
+import { analyzeMealImage } from "./services/image-analysis-service";
 
 declare module "express-session" {
   interface SessionData {
@@ -499,6 +500,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     } catch (error) {
       res.status(500).json({ message: "Server error" });
+    }
+  });
+  
+  // Meal Photo Analysis Route
+  app.post("/api/meal-analysis", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    
+    try {
+      const { imageData } = req.body;
+      if (!imageData) {
+        return res.status(400).json({ message: "Image data is required" });
+      }
+      
+      // Process the image with OpenAI's GPT-4 Vision
+      const analysisResult = await analyzeMealImage(imageData);
+      
+      // Return the analysis
+      res.status(200).json({
+        message: "Meal analysis complete",
+        result: analysisResult
+      });
+    } catch (error) {
+      console.error("Meal analysis error:", error);
+      res.status(500).json({ message: "Failed to analyze meal image" });
     }
   });
 
