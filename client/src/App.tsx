@@ -19,10 +19,16 @@ import { useLocation } from "wouter";
 function Router() {
   const { isAuthenticated, isOnboarding, checkAuth } = useAuth();
   const [location, setLocation] = useLocation();
+  
+  // Check if we're in demo mode
+  const isDemoMode = location.includes('demo=true');
 
   useEffect(() => {
     const checkAuthentication = async () => {
       await checkAuth();
+      
+      // Skip authentication checks if in demo mode
+      if (isDemoMode) return;
       
       // Redirect if on protected page and not authenticated
       const protectedPaths = [
@@ -45,19 +51,29 @@ function Router() {
     };
     
     checkAuthentication();
-  }, [checkAuth, isAuthenticated, isOnboarding, location, setLocation]);
+  }, [checkAuth, isAuthenticated, isOnboarding, location, setLocation, isDemoMode]);
+
+  // Demo mode banner
+  const DemoBanner = () => (
+    <div className="bg-yellow-100 text-yellow-800 px-4 py-2 text-center">
+      Demo Mode: This is a preview of the Layover Fuel dashboard with the new meal photo analysis feature.
+    </div>
+  );
 
   return (
-    <Switch>
-      <Route path="/" component={() => isAuthenticated && isOnboarding ? <OnboardingView /> : <Login />} />
-      <Route path="/auth/register" component={Register} />
-      <Route path="/auth/login" component={Login} />
-      <Route path="/dashboard" component={DashboardPage} />
-      <Route path="/dashboard/nutrition" component={NutritionPage} />
-      <Route path="/dashboard/workout" component={WorkoutPage} />
-      <Route path="/dashboard/profile" component={ProfilePage} />
-      <Route component={NotFound} />
-    </Switch>
+    <>
+      {isDemoMode && <DemoBanner />}
+      <Switch>
+        <Route path="/" component={() => isAuthenticated && isOnboarding ? <OnboardingView /> : <Login />} />
+        <Route path="/auth/register" component={Register} />
+        <Route path="/auth/login" component={Login} />
+        <Route path="/dashboard" component={isDemoMode ? DashboardPage : (isAuthenticated ? DashboardPage : Login)} />
+        <Route path="/dashboard/nutrition" component={isDemoMode ? NutritionPage : (isAuthenticated ? NutritionPage : Login)} />
+        <Route path="/dashboard/workout" component={isDemoMode ? WorkoutPage : (isAuthenticated ? WorkoutPage : Login)} />
+        <Route path="/dashboard/profile" component={isDemoMode ? ProfilePage : (isAuthenticated ? ProfilePage : Login)} />
+        <Route component={NotFound} />
+      </Switch>
+    </>
   );
 }
 

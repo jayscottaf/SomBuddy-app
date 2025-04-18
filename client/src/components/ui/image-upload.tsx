@@ -1,41 +1,47 @@
-import { useState, useRef } from "react";
-import { Button } from "./button";
-import { Popover, PopoverContent, PopoverTrigger } from "./popover";
+import React, { useState, useRef } from "react";
+import { CameraIcon, ImageIcon, XIcon } from "lucide-react";
+import { 
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
 
 interface ImageUploadProps {
-  onImageSelect: (file: File, preview: string) => void;
+  onImageSelect: (file: File, previewUrl: string) => void;
   className?: string;
 }
 
 export function ImageUpload({ onImageSelect, className }: ImageUploadProps) {
-  const [isOpen, setIsOpen] = useState(false);
+  const [isPopoverOpen, setIsPopoverOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        if (event.target?.result) {
-          onImageSelect(file, event.target.result as string);
-          setIsOpen(false);
-        }
-      };
-      reader.readAsDataURL(file);
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      if (typeof reader.result === 'string') {
+        onImageSelect(file, reader.result);
+        setIsPopoverOpen(false);
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleCameraClick = () => {
+    if (fileInputRef.current) {
+      fileInputRef.current.accept = "image/*;capture=camera";
+      fileInputRef.current.click();
     }
   };
 
-  const triggerFileInput = () => {
-    fileInputRef.current?.click();
-  };
-
-  // For future implementation of camera capture
-  const handleCameraCapture = () => {
-    // Since direct camera access requires permissions and
-    // is better handled with a proper mobile implementation,
-    // we'll use the file input as a fallback
-    triggerFileInput();
-    setIsOpen(false);
+  const handlePhotoLibraryClick = () => {
+    if (fileInputRef.current) {
+      fileInputRef.current.accept = "image/*";
+      fileInputRef.current.click();
+    }
   };
 
   return (
@@ -43,50 +49,46 @@ export function ImageUpload({ onImageSelect, className }: ImageUploadProps) {
       <input
         type="file"
         ref={fileInputRef}
-        onChange={handleFileChange}
+        style={{ display: "none" }}
+        onChange={handleFileSelect}
         accept="image/*"
-        className="hidden"
       />
       
-      <Popover open={isOpen} onOpenChange={setIsOpen}>
+      <Popover open={isPopoverOpen} onOpenChange={setIsPopoverOpen}>
         <PopoverTrigger asChild>
-          <Button 
-            variant="ghost" 
-            size="icon"
-            className={`rounded-full h-8 w-8 ${className}`}
-            aria-label="Add photo"
+          <button 
+            type="button"
+            className={cn(
+              "rounded-full flex items-center justify-center hover:bg-gray-100 w-8 h-8 transition-colors",
+              className
+            )}
+            aria-label="Add image"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M12 5v14M5 12h14"/>
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="10" />
+              <line x1="12" y1="8" x2="12" y2="16" />
+              <line x1="8" y1="12" x2="16" y2="12" />
             </svg>
-          </Button>
+          </button>
         </PopoverTrigger>
-        <PopoverContent className="w-48 p-2">
-          <div className="flex flex-col space-y-1">
-            <Button 
-              variant="ghost" 
-              className="justify-start" 
-              onClick={triggerFileInput}
+        
+        <PopoverContent sideOffset={5} className="w-56 p-0">
+          <div className="flex flex-col py-1">
+            <button
+              onClick={handleCameraClick}
+              className="flex items-center gap-2 p-3 text-gray-700 hover:bg-gray-100 transition-colors text-sm"
             >
-              <svg className="mr-2 h-4 w-4" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
-                <circle cx="8.5" cy="8.5" r="1.5"/>
-                <polyline points="21 15 16 10 5 21"/>
-              </svg>
-              Photo Library
-            </Button>
+              <CameraIcon className="w-4 h-4" />
+              <span>Take a Photo</span>
+            </button>
             
-            <Button 
-              variant="ghost" 
-              className="justify-start" 
-              onClick={handleCameraCapture}
+            <button
+              onClick={handlePhotoLibraryClick}
+              className="flex items-center gap-2 p-3 text-gray-700 hover:bg-gray-100 transition-colors text-sm"
             >
-              <svg className="mr-2 h-4 w-4" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
-                <circle cx="12" cy="13" r="4"/>
-              </svg>
-              Take Photo
-            </Button>
+              <ImageIcon className="w-4 h-4" />
+              <span>Choose from Library</span>
+            </button>
           </div>
         </PopoverContent>
       </Popover>
