@@ -1,0 +1,63 @@
+Build a full-stack web app called "Layover Fuel" that supports multiple users.
+
+Each user should have their own profile with secure login and a conversational AI onboarding experience. Instead of a static form, use a GPT-style large language model (LLM) interaction to simulate a human-like fitness/health coach that gathers the following info:
+- Name, email, age, height, weight, gender
+- Fitness goal: Shred (fat loss) or Sustain (maintenance/muscle retention)
+- Activity level (lightly active, moderate, very active)
+- Any dietary restrictions (e.g., no dairy, vegetarian)
+- Gym memberships (e.g., YMCA, Planet Fitness, etc.)
+- Max distance willing to travel to gym (walking or public transit)
+
+The app should calculate a custom TDEE (Total Daily Energy Expenditure) for each user and generate a personalized daily plan with:
+- Macro-balanced meal suggestions
+- Hotel/room workout plan plus gym recommendations based on gym access and proximity
+- Daily motivation or mindset tip based on their goal and energy level
+
+The app must include:
+- A dashboard showing current progress and trends (weight, steps, HRV if connected to Apple Health or via manual entry)
+- Structured data tracking for Nutrition, Workout, and Health using Airtable (or fallback to local storage)
+- A backend logic layer that uses GPT (via OpenAI API) to generate plans and adjust macros weekly
+- A way to store data in Airtable, with one row per user per day, per log type
+- Built-in notifications (daily check-ins, stretch reminders, flex meal alerts)
+- An AI feedback loop that asks the user “How was today?” and refines future plans based on their answers
+
+Use Python (FastAPI or Flask) for the backend and basic HTML/CSS/JavaScript or a frontend framework (like React or Svelte). Structure the project cleanly and use comments to guide future development.
+
+Include this Airtable schema:
+
+---
+
+USERS TABLE
+- User ID (autonumber)
+- Email (email)
+- Name (text)
+- Age (number)
+- Height (number)
+- Weight (number)
+- Gender (single select)
+- Fitness Goal (single select)
+- Activity Level (single select)
+- Gym Memberships (multi-select)
+- Max Commute Time (number, in minutes)
+- TDEE (number)
+- Created At (date)
+
+NUTRITION LOG
+- Date (date)
+- User (linked to Users)
+- Meal Style (single select)
+- Calories / Protein / Carbs / Fat / Fiber (numbers)
+- Notes (long text)
+
+WORKOUT LOG
+- Date (date)
+- User (linked)
+- Workout Type (select)
+- Duration / Intensity / Equipment (varied)
+- Notes (text)
+
+HEALTH LOG
+- Date (date)
+- User (linked)
+- Weight / HRV / Resting HR / VO₂ Max / Steps / Distance Walked / Active Energy (numbers)
+- Notes (long text)
