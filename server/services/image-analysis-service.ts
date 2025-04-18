@@ -54,7 +54,10 @@ export async function analyzeMealImage(imageBase64: string): Promise<{
       response_format: { type: "json_object" },
     });
 
-    const result = JSON.parse(response.choices[0].message.content || "{}");
+    const content = response.choices[0].message.content || "{}";
+    console.log("OpenAI response:", content);
+    
+    const result = JSON.parse(content);
     
     // Return structured data
     return {
