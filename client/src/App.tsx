@@ -22,61 +22,63 @@ function Router() {
   const { isAuthenticated, isOnboarding, checkAuth } = useAuth();
   const [location, setLocation] = useLocation();
   
-  // Get URL params to check for demo mode
-  const params = new URLSearchParams(window.location.search);
-  const isDemoMode = params.has('demo');
+  // Check if we're on a public path that doesn't need authentication
+  const isPublicPath = location === '/demo' || location === '/tour' || location === '/app';
 
   useEffect(() => {
-    // Don't run authentication checks for special routes
-    if (location === '/demo' || location === '/tour') {
-      return;
+    if (isPublicPath) {
+      return; // Skip auth checks for public paths
     }
     
     const checkAuthentication = async () => {
-      await checkAuth();
-      
-      // Redirect if on protected page and not authenticated
-      const protectedPaths = [
-        '/dashboard',
-        '/dashboard/nutrition',
-        '/dashboard/workout',
-        '/dashboard/profile',
-        '/dashboard/settings',
-        '/dashboard/plan'
-      ];
-      
-      if (!isAuthenticated && protectedPaths.some(path => location.startsWith(path))) {
-        setLocation('/auth/login');
-      }
-      
-      // Redirect to dashboard if authenticated and not on onboarding
-      if (isAuthenticated && !isOnboarding && location === '/') {
-        setLocation('/dashboard');
+      try {
+        await checkAuth();
+        
+        // Redirect to dashboard if authenticated and on the root path
+        if (isAuthenticated && !isOnboarding && location === '/') {
+          setLocation('/dashboard');
+        }
+      } catch (error) {
+        console.error("Auth check error:", error);
       }
     };
     
     checkAuthentication();
-  }, [checkAuth, isAuthenticated, isOnboarding, location, setLocation]);
+  }, [checkAuth, isAuthenticated, isOnboarding, location, setLocation, isPublicPath]);
 
   return (
     <Switch>
-      {/* Special routes that don't require authentication */}
+      {/* Public routes that don't require authentication */}
       <Route path="/demo" component={DemoPage} />
       <Route path="/tour" component={TourPage} />
+      <Route path="/app" component={() => isAuthenticated ? <DashboardPage /> : <Login />} />
       
+      {/* Root path shows splash screen in index.html */}
       <Route path="/" component={() => {
-        // For the root path, check the query param for demo mode
-        if (isDemoMode) return <DemoPage />;
         if (isAuthenticated && isOnboarding) return <OnboardingView />;
+        if (isAuthenticated) return <DashboardPage />;
         return <Login />;
       }} />
       
+      {/* Auth routes */}
       <Route path="/auth/register" component={Register} />
       <Route path="/auth/login" component={Login} />
-      <Route path="/dashboard" component={() => isAuthenticated ? <DashboardPage /> : <Login />} />
-      <Route path="/dashboard/nutrition" component={() => isAuthenticated ? <NutritionPage /> : <Login />} />
-      <Route path="/dashboard/workout" component={() => isAuthenticated ? <WorkoutPage /> : <Login />} />
-      <Route path="/dashboard/profile" component={() => isAuthenticated ? <ProfilePage /> : <Login />} />
+      
+      {/* Protected dashboard routes */}
+      <Route path="/dashboard">
+        {isAuthenticated ? <DashboardPage /> : <Login />}
+      </Route>
+      <Route path="/dashboard/nutrition">
+        {isAuthenticated ? <NutritionPage /> : <Login />}
+      </Route>
+      <Route path="/dashboard/workout">
+        {isAuthenticated ? <WorkoutPage /> : <Login />}
+      </Route>
+      <Route path="/dashboard/profile">
+        {isAuthenticated ? <ProfilePage /> : <Login />}
+      </Route>
+      
+      {/* 404 page */}
       <Route component={NotFound} />
     </Switch>
   );
