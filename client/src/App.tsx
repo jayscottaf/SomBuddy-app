@@ -11,6 +11,7 @@ import DashboardPage from "@/pages/dashboard";
 import NutritionPage from "@/pages/dashboard/nutrition";
 import WorkoutPage from "@/pages/dashboard/workout";
 import ProfilePage from "@/pages/dashboard/profile";
+import TourPage from "@/pages/tour";
 import { useAuth } from "./context/auth-context";
 import { OnboardingView } from "./components/onboarding/OnboardingView";
 import DemoPage from "./components/dashboard/DemoPage";
@@ -26,8 +27,8 @@ function Router() {
   const isDemoMode = params.has('demo');
 
   useEffect(() => {
-    // Don't run authentication checks for the demo route
-    if (location === '/demo') {
+    // Don't run authentication checks for special routes
+    if (location === '/demo' || location === '/tour') {
       return;
     }
     
@@ -59,8 +60,9 @@ function Router() {
 
   return (
     <Switch>
-      {/* Demo mode has a dedicated route */}
+      {/* Special routes that don't require authentication */}
       <Route path="/demo" component={DemoPage} />
+      <Route path="/tour" component={TourPage} />
       
       <Route path="/" component={() => {
         // For the root path, check the query param for demo mode
