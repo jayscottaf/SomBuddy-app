@@ -16,6 +16,13 @@ import {
   processFeedback,
   type OnboardingQuestion 
 } from "./services/openai-service";
+import {
+  getOrCreateThread,
+  addMessageToThread,
+  runAssistantOnThread,
+  checkRunStatus,
+  getMessagesFromThread
+} from "./services/assistant-service";
 import { generateMealPlan } from "./services/meal-service";
 import { generateWorkoutPlan } from "./services/workout-service";
 import { analyzeMealImage } from "./services/image-analysis-service";
@@ -527,6 +534,86 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Meal analysis error:", error);
       res.status(500).json({ message: "Failed to analyze meal image" });
+    }
+  });
+
+  // Assistant Chat API Routes
+  
+  // Initialize or retrieve a thread
+  app.post("/api/assistant/thread", async (req: Request, res: Response) => {
+    try {
+      const { threadId } = req.body;
+      const newThreadId = await getOrCreateThread(threadId);
+      res.status(200).json({ threadId: newThreadId });
+    } catch (error) {
+      console.error("Error creating thread:", error);
+      res.status(500).json({ message: "Failed to create or retrieve thread" });
+    }
+  });
+  
+  // Send a message to the assistant
+  app.post("/api/assistant/message", async (req: Request, res: Response) => {
+    try {
+      const { threadId, message, imageData } = req.body;
+      
+      if (!threadId) {
+        return res.status(400).json({ message: "Thread ID is required" });
+      }
+      
+      if (!message && !imageData) {
+        return res.status(400).json({ message: "Message or image is required" });
+      }
+      
+      // Add the message to the thread
+      await addMessageToThread(threadId, message || "Analyze this image", imageData);
+      
+      // Run the assistant on the thread
+      const run = await runAssistantOnThread(threadId);
+      
+      // Poll for completion
+      let runStatus = await checkRunStatus(threadId, run.id);
+      let attempts = 0;
+      const maxAttempts = 30; // Maximum 30 attempts (30 seconds)
+      
+      while (runStatus.status !== "completed" && attempts < maxAttempts) {
+        // Wait for 1 second
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        // Check the status again
+        runStatus = await checkRunStatus(threadId, run.id);
+        attempts++;
+      }
+      
+      if (runStatus.status !== "completed") {
+        return res.status(408).json({ message: "Assistant processing timed out" });
+      }
+      
+      // Get the messages from the thread
+      const messages = await getMessagesFromThread(threadId);
+      
+      res.status(200).json({ messages: messages.data });
+    } catch (error) {
+      console.error("Error processing message:", error);
+      res.status(500).json({ message: "Failed to process message" });
+    }
+  });
+  
+  // Get all messages from a thread
+  app.get("/api/assistant/messages/:threadId", async (req: Request, res: Response) => {
+    try {
+      const { threadId } = req.params;
+      
+      if (!threadId) {
+        return res.status(400).json({ message: "Thread ID is required" });
+      }
+      
+      // Get the messages from the thread
+      const messages = await getMessagesFromThread(threadId);
+      
+      res.status(200).json({ messages: messages.data });
+    } catch (error) {
+      console.error("Error retrieving messages:", error);
+      res.status(500).json({ message: "Failed to retrieve messages" });
     }
   });
 
