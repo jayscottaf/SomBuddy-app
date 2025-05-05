@@ -15,6 +15,7 @@ export async function proxyRequestToOpenAI(
     const headers: { [key: string]: string } = {
       'Authorization': `Bearer ${apiKey}`,
       'Content-Type': 'application/json',
+      'OpenAI-Beta': 'assistants=v2',
     };
     
     // Create a URL for the OpenAI request

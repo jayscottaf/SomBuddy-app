@@ -161,7 +161,7 @@ export function AssistantChat() {
       id: Date.now().toString(),
       role: "user",
       content: [input],
-      imageUrl: tempImage,
+      imageUrl: tempImage || undefined,
     };
     
     setMessages((prev) => [...prev, userMessage]);
@@ -178,7 +178,7 @@ export function AssistantChat() {
     // Send the message to the API
     sendMessageMutation.mutate({
       message: input,
-      imageData: tempImage,
+      imageData: tempImage || undefined,
     });
     
     // Clear the input and image
