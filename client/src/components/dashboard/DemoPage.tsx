@@ -1,19 +1,22 @@
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
-import { MessageSquare } from "lucide-react";
+import { MessageSquare, ArrowLeft } from "lucide-react";
 
 export default function DemoPage() {
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="bg-yellow-100 text-yellow-800 px-4 py-3 text-center font-medium">
-        <p>Demo Mode: Layover Fuel with Meal Photo Analysis Feature</p>
-        <p className="text-sm mt-1">Try uploading a food photo using the + button in the form below!</p>
-      </div>
-      
       <div className="container mx-auto px-4 py-8">
-        <div className="mb-6">
-          <h1 className="text-3xl font-bold text-gray-900">Layover Fuel Dashboard</h1>
-          <p className="text-gray-600 mt-2">Stay on track with your fitness goals while traveling</p>
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">Layover Fuel Dashboard</h1>
+            <p className="text-gray-600 mt-2">Stay on track with your fitness goals while traveling</p>
+          </div>
+          <Link href="/">
+            <Button variant="outline" className="flex items-center gap-2">
+              <ArrowLeft className="h-4 w-4" />
+              Back to Chat
+            </Button>
+          </Link>
         </div>
         
         <div className="border-b pb-6 mb-6">
@@ -70,7 +73,7 @@ export default function DemoPage() {
               Chat with our AI fitness coach to analyze food photos, get nutrition advice,
               and receive personalized workout recommendations.
             </p>
-            <Link href="/chat">
+            <Link href="/">
               <Button size="lg" className="gap-2 px-8 py-6 text-lg">
                 <MessageSquare className="h-6 w-6" />
                 Open Chat Assistant
