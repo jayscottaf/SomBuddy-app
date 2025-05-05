@@ -88,19 +88,12 @@
         <div class="button-container">
           <a href="/tour" class="splash-button primary-button">Take the Interactive Tour</a>
           <a href="/demo" class="splash-button secondary-button">Try the Meal Analysis Demo</a>
-          <a href="/app" class="splash-button secondary-button" id="continue-button">Continue to Application</a>
         </div>
       </div>
     </div>
     <script>
-      // Hide splash screen if user has visited before or after clicking continue
-      document.getElementById('continue-button').addEventListener('click', function() {
-        document.getElementById('splash-screen').style.display = 'none';
-        localStorage.setItem('hideSplash', 'true');
-      });
-      
-      // Check if we should hide the splash screen
-      if (window.location.pathname !== "/" || localStorage.getItem('hideSplash') === 'true') {
+      // Only show splash screen on root path
+      if (window.location.pathname !== "/") {
         document.getElementById('splash-screen').style.display = 'none';
       }
     </script>

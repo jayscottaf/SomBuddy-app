@@ -19,64 +19,24 @@ import { useEffect } from "react";
 import { useLocation } from "wouter";
 
 function Router() {
-  const { isAuthenticated, isOnboarding, checkAuth } = useAuth();
-  const [location, setLocation] = useLocation();
-  
-  // Check if we're on a public path that doesn't need authentication
-  const isPublicPath = location === '/demo' || location === '/tour' || location === '/app';
-
-  useEffect(() => {
-    if (isPublicPath) {
-      return; // Skip auth checks for public paths
-    }
-    
-    const checkAuthentication = async () => {
-      try {
-        await checkAuth();
-        
-        // Redirect to dashboard if authenticated and on the root path
-        if (isAuthenticated && !isOnboarding && location === '/') {
-          setLocation('/dashboard');
-        }
-      } catch (error) {
-        console.error("Auth check error:", error);
-      }
-    };
-    
-    checkAuthentication();
-  }, [checkAuth, isAuthenticated, isOnboarding, location, setLocation, isPublicPath]);
+  // For MVP, we're bypassing authentication and using a simple router
+  const [location] = useLocation();
 
   return (
     <Switch>
-      {/* Public routes that don't require authentication */}
+      {/* Demo Mode - This is our main focus for MVP */}
       <Route path="/demo" component={DemoPage} />
+      
+      {/* Tour Page - Shows features walkthrough */}
       <Route path="/tour" component={TourPage} />
-      <Route path="/app" component={() => isAuthenticated ? <DashboardPage /> : <Login />} />
       
-      {/* Root path shows splash screen in index.html */}
-      <Route path="/" component={() => {
-        if (isAuthenticated && isOnboarding) return <OnboardingView />;
-        if (isAuthenticated) return <DashboardPage />;
-        return <Login />;
-      }} />
+      {/* Root path shows splash screen (defined in index.html) */}
+      <Route path="/" component={DemoPage} />
       
-      {/* Auth routes */}
-      <Route path="/auth/register" component={Register} />
-      <Route path="/auth/login" component={Login} />
-      
-      {/* Protected dashboard routes */}
-      <Route path="/dashboard">
-        {isAuthenticated ? <DashboardPage /> : <Login />}
-      </Route>
-      <Route path="/dashboard/nutrition">
-        {isAuthenticated ? <NutritionPage /> : <Login />}
-      </Route>
-      <Route path="/dashboard/workout">
-        {isAuthenticated ? <WorkoutPage /> : <Login />}
-      </Route>
-      <Route path="/dashboard/profile">
-        {isAuthenticated ? <ProfilePage /> : <Login />}
-      </Route>
+      {/* Redirect everything else to Demo for MVP */}
+      <Route path="/dashboard" component={DemoPage} />
+      <Route path="/dashboard/:any*" component={DemoPage} />
+      <Route path="/auth/:any*" component={DemoPage} />
       
       {/* 404 page */}
       <Route component={NotFound} />
