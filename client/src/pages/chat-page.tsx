@@ -153,11 +153,24 @@ export default function ChatPage() {
     },
     onError: (error) => {
       console.error("Error sending message:", error);
+      
+      // Try to parse the detailed error information if available
+      let errorMessage = "Failed to send message. Please try again.";
+      if (error instanceof Error && 'cause' in error) {
+        const cause = error.cause as any;
+        if (cause && cause.error) {
+          errorMessage = `Error: ${cause.error}`;
+        }
+      }
+      
       toast({
         title: "Error",
-        description: "Failed to send message. Please try again.",
+        description: errorMessage,
         variant: "destructive",
       });
+      
+      // Remove the processing message from the UI
+      setMessages(messages => messages.filter(msg => msg.id !== "processing"));
     },
   });
 

@@ -564,24 +564,66 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Message or image is required" });
       }
       
-      // Add the message to the thread
-      await addMessageToThread(threadId, message || "Analyze this image", imageData);
+      // Log image data size if it exists
+      if (imageData) {
+        const imageSizeKB = Math.round(imageData.length / 1024);
+        console.log(`Processing image of approximately ${imageSizeKB}KB`);
+      }
+      
+      try {
+        // Add the message to the thread
+        console.log(`Adding message to thread ${threadId}`);
+        await addMessageToThread(threadId, message || "Analyze this image", imageData);
+        console.log("Message added successfully");
+      } catch (messageError) {
+        console.error("Error adding message to thread:", messageError);
+        return res.status(500).json({ 
+          message: "Failed to add message to thread", 
+          error: messageError instanceof Error ? messageError.message : String(messageError) 
+        });
+      }
       
       // Run the assistant on the thread
-      const run = await runAssistantOnThread(threadId);
+      console.log(`Running assistant on thread ${threadId}`);
+      let run;
+      try {
+        run = await runAssistantOnThread(threadId);
+        console.log(`Run created with ID: ${run.id}`);
+      } catch (runError) {
+        console.error("Error running assistant:", runError);
+        return res.status(500).json({ 
+          message: "Failed to run assistant", 
+          error: runError instanceof Error ? runError.message : String(runError) 
+        });
+      }
       
       // Poll for completion
-      let runStatus = await checkRunStatus(threadId, run.id);
+      let runStatus;
       let attempts = 0;
       const maxAttempts = 30; // Maximum 30 attempts (30 seconds)
       
-      while (runStatus.status !== "completed" && attempts < maxAttempts) {
-        // Wait for 1 second
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        // Check the status again
+      try {
         runStatus = await checkRunStatus(threadId, run.id);
-        attempts++;
+        console.log(`Initial run status: ${runStatus.status}`);
+        
+        while (runStatus.status !== "completed" && attempts < maxAttempts) {
+          // Wait for 1 second
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          
+          // Check the status again
+          runStatus = await checkRunStatus(threadId, run.id);
+          attempts++;
+          
+          if (attempts % 5 === 0) {
+            console.log(`Run status after ${attempts} attempts: ${runStatus.status}`);
+          }
+        }
+      } catch (statusError) {
+        console.error("Error checking run status:", statusError);
+        return res.status(500).json({ 
+          message: "Failed to check run status", 
+          error: statusError instanceof Error ? statusError.message : String(statusError) 
+        });
       }
       
       if (runStatus.status !== "completed") {
@@ -589,12 +631,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Get the messages from the thread
-      const messages = await getMessagesFromThread(threadId);
+      console.log(`Getting messages from thread ${threadId}`);
+      let messages;
+      try {
+        messages = await getMessagesFromThread(threadId);
+      } catch (messagesError) {
+        console.error("Error getting messages:", messagesError);
+        return res.status(500).json({ 
+          message: "Failed to get messages", 
+          error: messagesError instanceof Error ? messagesError.message : String(messagesError) 
+        });
+      }
       
       res.status(200).json({ messages: messages.data });
     } catch (error) {
       console.error("Error processing message:", error);
-      res.status(500).json({ message: "Failed to process message" });
+      res.status(500).json({ 
+        message: "Failed to process message",
+        error: error instanceof Error ? error.message : String(error)
+      });
     }
   });
   
