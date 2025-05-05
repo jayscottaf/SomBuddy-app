@@ -235,15 +235,9 @@ export default function ChatPage() {
                 message.role === "user" ? "justify-end" : "justify-start"
               }`}
             >
-              <div
-                className={`max-w-[75%] rounded-2xl p-3 ${
-                  message.role === "user"
-                    ? "bg-blue-500 text-white rounded-tr-none"
-                    : "bg-gray-700 text-white rounded-tl-none"
-                }`}
-              >
+              <div className="flex flex-col space-y-2 max-w-[75%]">
                 {message.imageUrl && (
-                  <div className="mb-2">
+                  <div className="rounded-2xl overflow-hidden">
                     <img
                       src={
                         message.imageUrl.startsWith("data:")
@@ -251,24 +245,32 @@ export default function ChatPage() {
                           : `https://api.openai.com/v1/files/${message.imageUrl}/content`
                       }
                       alt="Uploaded image"
-                      className="w-full object-cover rounded-lg"
+                      className="w-full object-cover"
                     />
                   </div>
                 )}
                 
-                {message.content.map((text, i) => (
-                  <p key={i} className="mb-1">
-                    {text}
-                  </p>
-                ))}
-                
-                {message.id === "processing" && (
-                  <div className="flex items-center mt-1">
-                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-pulse mr-1"></div>
-                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-pulse delay-150 mr-1"></div>
-                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-pulse delay-300"></div>
-                  </div>
-                )}
+                <div
+                  className={`rounded-2xl p-3 ${
+                    message.role === "user"
+                      ? "bg-blue-500 text-white rounded-tr-none"
+                      : "bg-gray-700 text-white rounded-tl-none"
+                  }`}
+                >
+                  {message.content.map((text, i) => (
+                    <p key={i} className="mb-1">
+                      {text}
+                    </p>
+                  ))}
+                  
+                  {message.id === "processing" && (
+                    <div className="flex items-center mt-1">
+                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-pulse mr-1"></div>
+                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-pulse delay-150 mr-1"></div>
+                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-pulse delay-300"></div>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           ))}
