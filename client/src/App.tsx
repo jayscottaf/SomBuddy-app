@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 
 import NotFound from "@/pages/not-found";
 import TourPage from "@/pages/tour";
+import ChatPage from "@/pages/chat-page";
 import DemoPage from "./components/dashboard/DemoPage";
 import { useLocation } from "wouter";
 
@@ -17,6 +18,9 @@ function Router() {
     <Switch>
       {/* Demo Mode - This is our main focus for MVP */}
       <Route path="/demo" component={DemoPage} />
+      
+      {/* Chat Page - iMessage-style assistant chat */}
+      <Route path="/chat" component={ChatPage} />
       
       {/* Tour Page - Shows features walkthrough */}
       <Route path="/tour" component={TourPage} />

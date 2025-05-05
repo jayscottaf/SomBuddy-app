@@ -1,4 +1,6 @@
-import { DailyCheckInCard } from "./DailyCheckInCard";
+import { Link } from "wouter";
+import { Button } from "@/components/ui/button";
+import { MessageSquare } from "lucide-react";
 
 export default function DemoPage() {
   return (
@@ -56,13 +58,25 @@ export default function DemoPage() {
         </div>
         
         <div className="mb-8">
-          <h2 className="text-xl font-semibold text-gray-800 mb-4">Try Our Meal Photo Analysis</h2>
+          <h2 className="text-xl font-semibold text-gray-800 mb-4">Try Our AI Assistant Chat</h2>
           <p className="text-gray-600 mb-6">
-            Our AI-powered tool can analyze photos of your meals to estimate nutritional content. 
-            Try it by clicking the + button in the check-in form below!
+            Our AI-powered assistant can analyze photos of your meals to estimate nutritional content,
+            provide workout tips, and help you make healthy choices while traveling.
           </p>
           
-          <DailyCheckInCard />
+          <div className="bg-white rounded-lg shadow-sm p-6 text-center">
+            <h3 className="text-lg font-semibold mb-3">Layover Fuel Assistant</h3>
+            <p className="text-gray-600 mb-6">
+              Chat with our AI fitness coach to analyze food photos, get nutrition advice,
+              and receive personalized workout recommendations.
+            </p>
+            <Link href="/chat">
+              <Button size="lg" className="gap-2 px-8 py-6 text-lg">
+                <MessageSquare className="h-6 w-6" />
+                Open Chat Assistant
+              </Button>
+            </Link>
+          </div>
         </div>
         
         <div className="mt-12 border-t pt-8">
