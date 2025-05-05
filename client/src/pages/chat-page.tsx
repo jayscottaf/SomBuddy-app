@@ -243,7 +243,7 @@ export default function ChatPage() {
                 }`}
               >
                 {message.imageUrl && (
-                  <div className="mb-2 rounded-lg overflow-hidden">
+                  <div className="mb-2">
                     <img
                       src={
                         message.imageUrl.startsWith("data:")
@@ -251,7 +251,7 @@ export default function ChatPage() {
                           : `https://api.openai.com/v1/files/${message.imageUrl}/content`
                       }
                       alt="Uploaded image"
-                      className="w-full object-cover"
+                      className="w-full object-cover rounded-lg"
                     />
                   </div>
                 )}
@@ -280,7 +280,7 @@ export default function ChatPage() {
       <div className="p-4 border-t border-gray-700 bg-gray-800">
         {/* Display image to be sent */}
         {tempImage && (
-          <div className="mb-4 p-2 border border-gray-600 rounded-lg bg-gray-700">
+          <div className="mb-4">
             <div className="flex justify-between items-center mb-2">
               <p className="text-sm text-gray-300">Image to analyze:</p>
               <button
@@ -306,7 +306,7 @@ export default function ChatPage() {
             <img
               src={tempImage}
               alt="Preview"
-              className="w-full max-h-40 object-cover rounded"
+              className="w-full max-h-40 object-cover rounded-lg"
             />
           </div>
         )}
