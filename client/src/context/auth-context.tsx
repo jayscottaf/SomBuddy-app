@@ -22,80 +22,46 @@ const AuthContext = createContext<AuthContextType>({
 
 export const useAuth = () => useContext(AuthContext);
 
+// For MVP: Simplified AuthProvider that assumes logged in state without making API calls
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  // For demo MVP: Always authenticated, no onboarding needed, no loading state
+  const [isAuthenticated, setIsAuthenticated] = useState(true);
   const [isOnboarding, setIsOnboarding] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
+  // MVP version that doesn't make API calls
   const checkAuth = useCallback(async () => {
-    try {
-      setIsLoading(true);
-      const response = await apiRequest("GET", "/api/user/profile");
-      
-      if (response.ok) {
-        const userData = await response.json();
-        setIsAuthenticated(true);
-        
-        // Check if user has completed onboarding
-        setIsOnboarding(!(userData.name && userData.age && userData.heightCm && userData.weightKg));
-      } else {
-        setIsAuthenticated(false);
-        setIsOnboarding(false);
-      }
-    } catch (error) {
-      console.error("Auth check error:", error);
-      setIsAuthenticated(false);
-      setIsOnboarding(false);
-    } finally {
-      setIsLoading(false);
-    }
+    // For the MVP demo, we're always authenticated
+    setIsLoading(false);
+    setIsAuthenticated(true);
+    setIsOnboarding(false);
   }, []);
 
+  // Only run once on mount
   useEffect(() => {
     checkAuth();
   }, [checkAuth]);
 
-  const login = async (email: string, password: string): Promise<boolean> => {
-    try {
-      const response = await apiRequest("POST", "/api/auth/login", {
-        email,
-        password,
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || "Login failed");
-      }
-
-      const data = await response.json();
-      setIsAuthenticated(true);
-      setIsOnboarding(!data.isOnboardingComplete);
-      return true;
-    } catch (error) {
-      console.error("Login error:", error);
-      toast({
-        title: "Login failed",
-        description: error instanceof Error ? error.message : "Invalid email or password",
-        variant: "destructive",
-      });
-      return false;
-    }
+  // Mock login function for demo
+  const login = async (_email: string, _password: string): Promise<boolean> => {
+    // Simulating successful login for MVP
+    setIsAuthenticated(true);
+    setIsOnboarding(false);
+    toast({
+      title: "Demo mode",
+      description: "You're using the demo version with a pre-authenticated user.",
+    });
+    return true;
   };
 
+  // Mock logout function for demo
   const logout = async () => {
-    try {
-      await apiRequest("POST", "/api/auth/logout");
-      setIsAuthenticated(false);
-      setIsOnboarding(false);
-    } catch (error) {
-      console.error("Logout error:", error);
-      toast({
-        title: "Logout failed",
-        description: "An error occurred during logout",
-        variant: "destructive",
-      });
-    }
+    // In the MVP, we stay logged in
+    toast({
+      title: "Demo mode",
+      description: "Logout is disabled in the demo version.",
+    });
   };
 
   return (

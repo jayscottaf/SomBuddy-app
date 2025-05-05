@@ -5,17 +5,8 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 
 import NotFound from "@/pages/not-found";
-import Register from "@/pages/auth/register";
-import Login from "@/pages/auth/login";
-import DashboardPage from "@/pages/dashboard";
-import NutritionPage from "@/pages/dashboard/nutrition";
-import WorkoutPage from "@/pages/dashboard/workout";
-import ProfilePage from "@/pages/dashboard/profile";
 import TourPage from "@/pages/tour";
-import { useAuth } from "./context/auth-context";
-import { OnboardingView } from "./components/onboarding/OnboardingView";
 import DemoPage from "./components/dashboard/DemoPage";
-import { useEffect } from "react";
 import { useLocation } from "wouter";
 
 function Router() {
