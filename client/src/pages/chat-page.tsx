@@ -217,52 +217,55 @@ export default function ChatPage() {
         </Link>
       </div>
 
-      {/* Messages container */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-900">
-        {messages.map((message, index) => (
-          <div
-            key={message.id + index}
-            className={`flex ${
-              message.role === "user" ? "justify-end" : "justify-start"
-            }`}
-          >
+      {/* Messages container - note: messages are in chronological order (oldest first) */}
+      <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-900 flex flex-col">
+        <div className="flex-1"></div> {/* This pushes messages down so new ones appear at the bottom */}
+        <div className="space-y-4">
+          {messages.map((message, index) => (
             <div
-              className={`max-w-[75%] rounded-2xl p-3 ${
-                message.role === "user"
-                  ? "bg-blue-500 text-white rounded-tr-none"
-                  : "bg-gray-700 text-white rounded-tl-none"
+              key={message.id + index}
+              className={`flex ${
+                message.role === "user" ? "justify-end" : "justify-start"
               }`}
             >
-              {message.imageUrl && (
-                <div className="mb-2 rounded-lg overflow-hidden">
-                  <img
-                    src={
-                      message.imageUrl.startsWith("data:")
-                        ? message.imageUrl
-                        : `https://api.openai.com/v1/files/${message.imageUrl}/content`
-                    }
-                    alt="Uploaded image"
-                    className="w-full object-cover"
-                  />
-                </div>
-              )}
-              
-              {message.content.map((text, i) => (
-                <p key={i} className="mb-1">
-                  {text}
-                </p>
-              ))}
-              
-              {message.id === "processing" && (
-                <div className="flex items-center mt-1">
-                  <div className="w-2 h-2 bg-gray-400 rounded-full animate-pulse mr-1"></div>
-                  <div className="w-2 h-2 bg-gray-400 rounded-full animate-pulse delay-150 mr-1"></div>
-                  <div className="w-2 h-2 bg-gray-400 rounded-full animate-pulse delay-300"></div>
-                </div>
-              )}
+              <div
+                className={`max-w-[75%] rounded-2xl p-3 ${
+                  message.role === "user"
+                    ? "bg-blue-500 text-white rounded-tr-none"
+                    : "bg-gray-700 text-white rounded-tl-none"
+                }`}
+              >
+                {message.imageUrl && (
+                  <div className="mb-2 rounded-lg overflow-hidden">
+                    <img
+                      src={
+                        message.imageUrl.startsWith("data:")
+                          ? message.imageUrl
+                          : `https://api.openai.com/v1/files/${message.imageUrl}/content`
+                      }
+                      alt="Uploaded image"
+                      className="w-full object-cover"
+                    />
+                  </div>
+                )}
+                
+                {message.content.map((text, i) => (
+                  <p key={i} className="mb-1">
+                    {text}
+                  </p>
+                ))}
+                
+                {message.id === "processing" && (
+                  <div className="flex items-center mt-1">
+                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-pulse mr-1"></div>
+                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-pulse delay-150 mr-1"></div>
+                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-pulse delay-300"></div>
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
-        ))}
+          ))}
+        </div>
         <div ref={messagesEndRef} />
       </div>
 
