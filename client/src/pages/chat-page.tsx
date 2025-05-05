@@ -184,15 +184,24 @@ export default function ChatPage() {
     
     setMessages((prev) => [...prev, processingMessage]);
     
-    // Send the message to the API
-    sendMessageMutation.mutate({
-      message: input,
-      imageData: tempImage || undefined,
-    });
-    
-    // Clear the input and image
-    setInput("");
-    setTempImage(null);
+    // Send the message to the API - show more detailed errors
+    try {
+      sendMessageMutation.mutate({
+        message: input,
+        imageData: tempImage || undefined,
+      });
+      
+      // Clear the input and image
+      setInput("");
+      setTempImage(null);
+    } catch (error) {
+      console.error("Error preparing to send message:", error);
+      toast({
+        title: "Error",
+        description: "Failed to send message. Please try with a smaller image.",
+        variant: "destructive",
+      });
+    }
   };
 
   // Handle image upload

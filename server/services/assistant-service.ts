@@ -63,34 +63,69 @@ export async function addMessageToThread(
   content: string,
   imageData?: string
 ) {
-  const messageContent: any[] = [{ type: "text", text: content }];
+  // Create a message content array
+  let messageContent: any[] = [];
+
+  // Add text content if provided
+  if (content && content.trim() !== '') {
+    messageContent.push({ type: "text", text: content });
+  }
   
-  // If we have image data, add it to the message
+  // If we have image data, upload it as a file first and then reference it
   if (imageData) {
-    messageContent.push({
-      type: "image_url",
-      image_url: {
-        url: imageData.startsWith('data:') 
-          ? imageData 
-          : `data:image/jpeg;base64,${imageData}`
-      }
-    });
-  }
-  
-  const response = await proxyRequestToOpenAI(
-    'POST', 
-    `/v1/threads/${threadId}/messages`,
-    {
-      role: "user",
-      content: messageContent
+    try {
+      console.log('Processing image data...');
+      
+      // Format the image data correctly for OpenAI
+      const formattedImageData = imageData.startsWith('data:') 
+        ? imageData 
+        : `data:image/jpeg;base64,${imageData}`;
+        
+      // Add to content array as image_url
+      messageContent.push({
+        type: "image_url",
+        image_url: {
+          url: formattedImageData
+        }
+      });
+      
+      console.log('Image added to message content');
+    } catch (error) {
+      console.error('Error processing image:', error);
+      throw new Error(`Failed to process image: ${error instanceof Error ? error.message : String(error)}`);
     }
-  );
-  
-  if (response.status !== 200) {
-    throw new Error(`Failed to add message to thread: ${JSON.stringify(response.data)}`);
   }
   
-  return response.data;
+  if (messageContent.length === 0) {
+    throw new Error('Message must include text or an image');
+  }
+  
+  console.log(`Adding message to thread ${threadId} with content types: ${messageContent.map(c => c.type).join(', ')}`);
+  
+  try {
+    const response = await proxyRequestToOpenAI(
+      'POST', 
+      `/v1/threads/${threadId}/messages`,
+      {
+        role: "user",
+        content: messageContent
+      }
+    );
+    
+    if (response.status !== 200) {
+      console.error('OpenAI API error:', response.data);
+      throw new Error(`Failed to add message to thread: ${JSON.stringify(response.data)}`);
+    }
+    
+    return response.data;
+  } catch (error) {
+    console.error('Error adding message to thread:', error);
+    if (error instanceof Error) {
+      throw error;
+    } else {
+      throw new Error(`Unknown error: ${String(error)}`);
+    }
+  }
 }
 
 // Run the assistant on a thread
