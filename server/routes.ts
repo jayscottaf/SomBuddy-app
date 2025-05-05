@@ -5,6 +5,7 @@ import session from "express-session";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { registerSchema, loginSchema, onboardingSchema } from "@shared/schema";
+import fetch from "node-fetch";
 import { 
   calculateTDEE, 
   calculateMacros 
