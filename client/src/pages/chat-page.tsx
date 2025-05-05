@@ -5,7 +5,7 @@ import { useToast } from "@/hooks/use-toast";
 import { ImageUpload } from "@/components/ui/image-upload";
 import { Button } from "@/components/ui/button";
 import { Link } from "wouter";
-import { Loader2, Send, ArrowLeft, Home } from "lucide-react";
+import { Loader2, Send, Home } from "lucide-react";
 
 interface Message {
   id: string;
@@ -233,15 +233,11 @@ export default function ChatPage() {
       {/* Header */}
       <div className="flex items-center justify-between bg-gray-800 px-4 py-3 border-b border-gray-700">
         <div className="flex items-center space-x-2">
-          <Link href="/">
-            <Button variant="ghost" size="icon" className="text-gray-300 hover:text-white">
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
-          </Link>
           <h1 className="text-xl font-semibold text-white">Layover Fuel Assistant</h1>
         </div>
         <Link href="/dashboard">
-          <Button variant="ghost" size="icon" className="text-gray-300 hover:text-white">
+          <Button variant="ghost" className="text-gray-300 hover:text-white flex items-center space-x-2">
+            <span>Dashboard</span>
             <Home className="h-5 w-5" />
           </Button>
         </Link>

@@ -16,20 +16,18 @@ function Router() {
 
   return (
     <Switch>
-      {/* Demo Mode - This is our main focus for MVP */}
+      {/* Chat Page as the home page - iMessage-style assistant chat */}
+      <Route path="/" component={ChatPage} />
+      
+      {/* Demo/Dashboard Mode */}
+      <Route path="/dashboard" component={DemoPage} />
+      
+      {/* Legacy routes kept for compatibility */}
       <Route path="/demo" component={DemoPage} />
-      
-      {/* Chat Page - iMessage-style assistant chat */}
       <Route path="/chat" component={ChatPage} />
-      
-      {/* Tour Page - Shows features walkthrough */}
       <Route path="/tour" component={TourPage} />
       
-      {/* Root path shows splash screen (defined in index.html) */}
-      <Route path="/" component={DemoPage} />
-      
       {/* Redirect everything else to Demo for MVP */}
-      <Route path="/dashboard" component={DemoPage} />
       <Route path="/dashboard/:any*" component={DemoPage} />
       <Route path="/auth/:any*" component={DemoPage} />
       
