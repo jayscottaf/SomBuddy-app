@@ -80,15 +80,20 @@ export default function ChatPage() {
       }
       const data = await response.json();
       
-      // Format messages
-      const formattedMessages = data.messages.map((msg: any) => ({
-        id: msg.id,
-        role: msg.role,
-        content: msg.content.map((content: any) => 
-          content.type === "text" ? content.text.value : ""
-        ).filter(Boolean),
-        imageUrl: msg.content.find((c: any) => c.type === "image_file")?.image_file?.file_id,
-      }));
+      // Format messages - ensure they're in chronological order (oldest first)
+      // The API returns messages in reverse chronological order (newest first)
+      // so we need to reverse them to display correctly
+      const formattedMessages = data.messages
+        .slice() // Create a copy of the array to avoid mutating the original
+        .reverse() // Reverse to get oldest first
+        .map((msg: any) => ({
+          id: msg.id,
+          role: msg.role,
+          content: msg.content.map((content: any) => 
+            content.type === "text" ? content.text.value : ""
+          ).filter(Boolean),
+          imageUrl: msg.content.find((c: any) => c.type === "image_file")?.image_file?.file_id,
+        }));
       
       // Add welcome message if no messages
       if (formattedMessages.length === 0) {
@@ -130,15 +135,18 @@ export default function ChatPage() {
       return response.json();
     },
     onSuccess: (data) => {
-      // Update messages with the new ones
-      const newMessages = data.messages.map((msg: any) => ({
-        id: msg.id,
-        role: msg.role,
-        content: msg.content.map((content: any) => 
-          content.type === "text" ? content.text.value : ""
-        ).filter(Boolean),
-        imageUrl: msg.content.find((c: any) => c.type === "image_file")?.image_file?.file_id,
-      }));
+      // Update messages with the new ones - make sure they're in chronological order
+      const newMessages = data.messages
+        .slice() // Create a copy of the array to avoid mutating the original
+        .reverse() // Reverse to get oldest first
+        .map((msg: any) => ({
+          id: msg.id,
+          role: msg.role,
+          content: msg.content.map((content: any) => 
+            content.type === "text" ? content.text.value : ""
+          ).filter(Boolean),
+          imageUrl: msg.content.find((c: any) => c.type === "image_file")?.image_file?.file_id,
+        }));
       
       setMessages(newMessages);
       setInput("");
@@ -217,10 +225,9 @@ export default function ChatPage() {
         </Link>
       </div>
 
-      {/* Messages container - note: messages are in chronological order (oldest first) */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-900 flex flex-col">
-        <div className="flex-1"></div> {/* This pushes messages down so new ones appear at the bottom */}
-        <div className="space-y-4">
+      {/* Messages container - fixed to show messages in correct order */}
+      <div className="flex-1 overflow-y-auto p-4 bg-gray-900">
+        <div className="flex flex-col space-y-4">
           {messages.map((message, index) => (
             <div
               key={message.id + index}
@@ -265,8 +272,8 @@ export default function ChatPage() {
               </div>
             </div>
           ))}
+          <div ref={messagesEndRef} />
         </div>
-        <div ref={messagesEndRef} />
       </div>
 
       {/* Input area */}
