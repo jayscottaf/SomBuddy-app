@@ -12,7 +12,7 @@ export default function DemoPage() {
             <p className="text-gray-300 mt-2">Stay on track with your fitness goals while traveling</p>
           </div>
           <Link href="/">
-            <Button variant="outline" className="flex items-center gap-2 text-gray-200 border-gray-700 hover:bg-gray-800">
+            <Button className="flex items-center gap-2 bg-blue-500 hover:bg-blue-600 text-white">
               <ArrowLeft className="h-4 w-4" />
               Back to Chat
             </Button>
