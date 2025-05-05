@@ -229,9 +229,9 @@ export default function ChatPage() {
   };
 
   return (
-    <div className="flex flex-col h-screen bg-gray-900">
-      {/* Header */}
-      <div className="flex items-center justify-between bg-gray-800 px-4 py-3 border-b border-gray-700">
+    <div className="flex flex-col h-screen bg-gray-900 overflow-hidden">
+      {/* Fixed Header */}
+      <div className="flex items-center justify-between bg-gray-800 px-4 py-3 border-b border-gray-700 sticky top-0 z-10">
         <div className="flex items-center space-x-2">
           <h1 className="text-xl font-semibold text-white">Layover Fuel Assistant</h1>
         </div>
@@ -243,8 +243,8 @@ export default function ChatPage() {
         </Link>
       </div>
 
-      {/* Messages container - fixed to show messages in correct order */}
-      <div className="flex-1 overflow-y-auto p-4 bg-gray-900">
+      {/* Messages container - scrollable area between fixed header and input */}
+      <div className="flex-1 overflow-y-auto p-4 bg-gray-900 pb-20">
         <div className="flex flex-col space-y-4">
           {messages.map((message, index) => (
             <div
@@ -298,8 +298,8 @@ export default function ChatPage() {
         </div>
       </div>
 
-      {/* Input area */}
-      <div className="p-4 border-t border-gray-700 bg-gray-800">
+      {/* Input area - fixed at bottom */}
+      <div className="p-4 border-t border-gray-700 bg-gray-800 sticky bottom-0 z-10">
         {/* Display image to be sent */}
         {tempImage && (
           <div className="mb-4">
