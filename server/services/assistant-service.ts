@@ -62,7 +62,7 @@ export async function getOrCreateThread(existingThreadId?: string) {
 export async function addMessageToThread(
   threadId: string, 
   content: string,
-  imageData?: string
+  imageData?: string | string[]
 ) {
   // Create a message content array
   let messageContent: any[] = [];
@@ -72,27 +72,37 @@ export async function addMessageToThread(
     messageContent.push({ type: "text", text: content });
   }
   
-  // If we have image data, upload it to Cloudinary and then reference it
-  if (imageData) {
-    try {
-      console.log('Processing image data...');
-      
-      // Check image data size
-      const imageSize = imageData.length;
-      console.log(`Image data size: ${Math.round(imageSize / 1024)}KB`);
-      
-      // First, make sure we have a valid data URL
-      let processedImageData = imageData;
-      if (!imageData.startsWith('data:')) {
-        processedImageData = `data:image/jpeg;base64,${imageData}`;
-      }
-      
-      console.log('Uploading image to Cloudinary...');
-      
+  // Handle either a single image or an array of images
+  const imagesToProcess = Array.isArray(imageData) ? imageData : (imageData ? [imageData] : []);
+  
+  // If we have image data, upload each to Cloudinary and add to message content
+  if (imagesToProcess.length > 0) {
+    console.log(`Processing ${imagesToProcess.length} images...`);
+    
+    // Track successful and failed uploads
+    let successfulUploads = 0;
+    let failedUploads = 0;
+    
+    // Process each image in the array
+    for (const imgData of imagesToProcess) {
       try {
+        if (!imgData) continue;
+        
+        // Check image data size
+        const imageSize = imgData.length;
+        console.log(`Processing image ${successfulUploads + failedUploads + 1}: ${Math.round(imageSize / 1024)}KB`);
+        
+        // First, make sure we have a valid data URL
+        let processedImageData = imgData;
+        if (!imgData.startsWith('data:')) {
+          processedImageData = `data:image/jpeg;base64,${imgData}`;
+        }
+        
+        console.log(`Uploading image ${successfulUploads + failedUploads + 1} to Cloudinary...`);
+        
         // Upload the image to Cloudinary and get a public URL
         const imageUrl = await uploadImageToCloudinary(processedImageData);
-        console.log(`Image uploaded successfully to Cloudinary: ${imageUrl}`);
+        console.log(`Image ${successfulUploads + 1} uploaded successfully to Cloudinary: ${imageUrl}`);
         
         // Add to content array as image_url with the public Cloudinary URL
         messageContent.push({
@@ -102,42 +112,57 @@ export async function addMessageToThread(
           }
         });
         
-        // Don't add any default text - the assistant should know to analyze the image
-        
-        console.log('Image successfully added to message content');
+        successfulUploads++;
+        console.log(`Image ${successfulUploads} successfully added to message content`);
       } catch (error) {
-        console.error('Error uploading to Cloudinary:', error);
-        // Re-throw with proper error message
+        failedUploads++;
+        console.error(`Error processing image ${successfulUploads + failedUploads}:`, error);
+        
+        // Continue with other images rather than stopping completely
         if (error instanceof Error) {
-          throw new Error(`Cloudinary upload failed: ${error.message}`);
+          console.error(`Cloudinary upload failed: ${error.message}`);
         } else {
-          throw new Error(`Cloudinary upload failed: Unknown error`);
+          console.error(`Cloudinary upload failed: Unknown error`);
         }
       }
-    } catch (error) {
-      console.error('Error processing image:', error);
+    }
+    
+    // Only add error message if ALL uploads failed
+    if (failedUploads > 0 && successfulUploads === 0) {
+      console.error(`All ${failedUploads} image uploads failed`);
       
-      // In case of any error, we'll still send the user's message text if available
+      // In case of complete failure, we'll still send the user's message text if available
       // But we'll add a note about the image upload failure
       if (!messageContent.some(item => item.type === "text")) {
         messageContent.push({
           type: "text",
-          text: "I tried to upload a food image for analysis, but there was a technical issue. Could you help me with my nutrition or workout questions instead?"
+          text: "I tried to upload food images for analysis, but there was a technical issue. Could you help me with my nutrition or workout questions instead?"
         });
       } else {
         // Add a note about the image upload failure to the existing message
         messageContent.push({
           type: "text",
-          text: "Note: There was an issue processing your image. Let me answer your other questions."
+          text: "Note: There was an issue processing your images. Let me answer your other questions."
         });
       }
+    } else if (failedUploads > 0 && successfulUploads > 0) {
+      // Some uploads succeeded, some failed
+      console.log(`${successfulUploads} images uploaded successfully, ${failedUploads} failed`);
       
-      console.error(`Failed to process image: ${error instanceof Error ? error.message : String(error)}`);
+      // Only add a note if there's already text content
+      if (messageContent.some(item => item.type === "text")) {
+        messageContent.push({
+          type: "text",
+          text: `Note: ${failedUploads} of your ${failedUploads + successfulUploads} images couldn't be processed, but I'll analyze the rest.`
+        });
+      }
+    } else if (successfulUploads > 0) {
+      console.log(`All ${successfulUploads} images uploaded successfully`);
     }
   }
   
   if (messageContent.length === 0) {
-    throw new Error('Message must include text or an image');
+    throw new Error('Message must include text or at least one valid image');
   }
   
   console.log(`Adding message to thread ${threadId} with content types: ${messageContent.map(c => c.type).join(', ')}`);

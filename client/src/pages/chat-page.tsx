@@ -267,20 +267,17 @@ export default function ChatPage() {
     setInput("");
     setTempImages([]);
     
-    // Send the message to the API - for now, just send the first image
-    // The API will need to be updated to support multiple images
+    // Send the message with all images to the API
     try {
-      // TODO: Update the API to support multiple images
-      // For now, just send the first image
       sendMessageMutation.mutate({
         message: currentInput,
-        imageData: currentImages.length > 0 ? currentImages[0] : undefined,
+        imageDataArray: currentImages.length > 0 ? currentImages : undefined,
       });
     } catch (error) {
       console.error("Error preparing to send message:", error);
       toast({
         title: "Error",
-        description: "Failed to send message. Please try with a smaller image.",
+        description: "Failed to send message. Please try with smaller images.",
         variant: "destructive",
       });
     }

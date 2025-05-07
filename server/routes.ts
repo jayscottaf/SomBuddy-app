@@ -557,21 +557,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Send a message to the assistant
   app.post("/api/assistant/message", async (req: Request, res: Response) => {
     try {
-      const { threadId, message, imageData } = req.body;
+      const { threadId, message, imageData, imageDataArray } = req.body;
       
       if (!threadId) {
         return res.status(400).json({ message: "Thread ID is required" });
       }
       
-      if (!message && !imageData) {
-        return res.status(400).json({ message: "Message or image is required" });
+      // Support both single imageData and multiple imageDataArray
+      const images = imageDataArray || (imageData ? [imageData] : []);
+      
+      if (!message && images.length === 0) {
+        return res.status(400).json({ message: "Message or at least one image is required" });
       }
       
-      // Process and validate image data
-      let processedImageData = imageData;
-      if (imageData) {
+      // Process and validate all image data
+      const validatedImages: string[] = [];
+      for (const img of images) {
         try {
-          const imageSizeKB = Math.round(imageData.length / 1024);
+          if (!img) continue;
+          
+          const imageSizeKB = Math.round(img.length / 1024);
           console.log(`Processing image of approximately ${imageSizeKB}KB`);
           
           // Check if image data is too large (OpenAI limit is ~20MB, but we'll be more conservative)
@@ -580,9 +585,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
               message: "Image is too large. Please use a smaller image (maximum 5MB)." 
             });
           }
+          
+          validatedImages.push(img);
         } catch (imgError) {
           console.error("Error processing image data:", imgError);
-          return res.status(400).json({ message: "Invalid image data format" });
+          // Continue with other images rather than failing completely
         }
       }
       
@@ -590,16 +597,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Add the message to the thread
         console.log(`Adding message to thread ${threadId}`);
         
-        // For debugging, log the image data size if present
-        if (imageData) {
-          const imageSizeKB = Math.round(imageData.length / 1024);
-          console.log(`Processing image upload, size: ${imageSizeKB}KB`);
-          console.log(`Image will be uploaded to Cloudinary and then sent to OpenAI`);
+        // For debugging, log the image data sizes
+        if (validatedImages.length > 0) {
+          console.log(`Processing ${validatedImages.length} images for upload`);
+          console.log(`Images will be uploaded to Cloudinary and then sent to OpenAI`);
         }
         
-        // When sending just an image, don't add default text - the assistant should know what to do
-        await addMessageToThread(threadId, message || "", imageData);
-        console.log("Message and image added successfully");
+        // When sending just images, don't add default text - the assistant should know what to do
+        await addMessageToThread(threadId, message || "", validatedImages);
+        console.log("Message and images added successfully");
       } catch (messageError) {
         console.error("Error adding message to thread:", messageError);
         
