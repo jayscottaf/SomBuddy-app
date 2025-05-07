@@ -156,15 +156,29 @@ export default function ChatPage() {
       
       // Try to parse the detailed error information if available
       let errorMessage = "Failed to send message. Please try again.";
-      if (error instanceof Error && 'cause' in error) {
-        const cause = error.cause as any;
-        if (cause && cause.error) {
-          errorMessage = `Error: ${cause.error}`;
+      let imageError = false;
+      
+      if (error instanceof Error) {
+        if ('cause' in error) {
+          const cause = error.cause as any;
+          if (cause && cause.error) {
+            errorMessage = `Error: ${cause.error}`;
+          }
+        }
+        
+        // Check for common image-related errors in the error message
+        const errorString = error.message.toLowerCase();
+        if (errorString.includes('image') || 
+            errorString.includes('file') || 
+            errorString.includes('too large') || 
+            errorString.includes('size')) {
+          imageError = true;
+          errorMessage = "Image too large. Please try with a smaller image or reduce its quality.";
         }
       }
       
       toast({
-        title: "Error",
+        title: imageError ? "Image Error" : "Error",
         description: errorMessage,
         variant: "destructive",
       });

@@ -22,10 +22,10 @@ export function ImageUpload({ onImageSelect, className = "" }: ImageUploadProps)
           // Create a canvas to resize the image
           const canvas = document.createElement('canvas');
           
-          // Calculate new dimensions - max width/height of 800px
+          // Calculate new dimensions - max width/height of 600px (reduced from 800px)
           let width = img.width;
           let height = img.height;
-          const MAX_SIZE = 800;
+          const MAX_SIZE = 600;
           
           if (width > height) {
             if (width > MAX_SIZE) {
@@ -46,8 +46,8 @@ export function ImageUpload({ onImageSelect, className = "" }: ImageUploadProps)
           const ctx = canvas.getContext('2d');
           ctx?.drawImage(img, 0, 0, width, height);
           
-          // Get the compressed data URL (JPEG format, 0.8 quality)
-          const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.8);
+          // Get the compressed data URL with increased compression (JPEG format, 0.6 quality)
+          const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.6);
           resolve(compressedDataUrl);
         };
         

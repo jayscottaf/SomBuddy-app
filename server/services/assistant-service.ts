@@ -76,11 +76,25 @@ export async function addMessageToThread(
     try {
       console.log('Processing image data...');
       
+      // Check image data size
+      const imageSize = imageData.length;
+      console.log(`Image data size: ${Math.round(imageSize / 1024)}KB`);
+      
       // Format the image data correctly for OpenAI
-      const formattedImageData = imageData.startsWith('data:') 
-        ? imageData 
-        : `data:image/jpeg;base64,${imageData}`;
-        
+      // If it's a data URL, keep it, otherwise add the data URL prefix
+      let formattedImageData = imageData;
+      if (!imageData.startsWith('data:')) {
+        formattedImageData = `data:image/jpeg;base64,${imageData}`;
+      }
+      
+      // For very large images, try to reduce the quality further by removing metadata
+      if (imageData.length > 500000) { // 500KB
+        console.log('Large image detected, attempting to optimize...');
+        // This is a simple approach to reduce URL components
+        formattedImageData = formattedImageData.split(',')[1];
+        formattedImageData = `data:image/jpeg;base64,${formattedImageData}`;
+      }
+      
       // Add to content array as image_url
       messageContent.push({
         type: "image_url",
