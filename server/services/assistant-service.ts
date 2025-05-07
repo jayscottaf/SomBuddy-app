@@ -81,32 +81,49 @@ export async function addMessageToThread(
       const imageSize = imageData.length;
       console.log(`Image data size: ${Math.round(imageSize / 1024)}KB`);
       
-      console.log('Uploading image to Cloudinary...');
-      
-      // Upload the image to Cloudinary and get a public URL
-      const imageUrl = await uploadImageToCloudinary(imageData);
-      console.log(`Image uploaded successfully: ${imageUrl}`);
-      
-      // Add to content array as image_url with the public Cloudinary URL
-      messageContent.push({
-        type: "image_url",
-        image_url: {
-          url: imageUrl
-        }
-      });
-      
-      // Add context about what the user wants analyzed
-      if (!content || content.trim() === '') {
-        messageContent.push({
-          type: "text",
-          text: "Please analyze this food image for nutritional content."
-        });
+      // First, make sure we have a valid data URL
+      let processedImageData = imageData;
+      if (!imageData.startsWith('data:')) {
+        processedImageData = `data:image/jpeg;base64,${imageData}`;
       }
       
-      console.log('Image successfully added to message content');
+      console.log('Uploading image to Cloudinary...');
+      
+      try {
+        // Upload the image to Cloudinary and get a public URL
+        const imageUrl = await uploadImageToCloudinary(processedImageData);
+        console.log(`Image uploaded successfully to Cloudinary: ${imageUrl}`);
+        
+        // Add to content array as image_url with the public Cloudinary URL
+        messageContent.push({
+          type: "image_url",
+          image_url: {
+            url: imageUrl
+          }
+        });
+        
+        // Add context about what the user wants analyzed
+        if (!content || content.trim() === '') {
+          messageContent.push({
+            type: "text",
+            text: "Please analyze this food image for nutritional content."
+          });
+        }
+        
+        console.log('Image successfully added to message content');
+      } catch (cloudinaryError) {
+        console.error('Error uploading to Cloudinary:', cloudinaryError);
+        throw new Error(`Cloudinary upload failed: ${cloudinaryError.message}`);
+      }
     } catch (error) {
       console.error('Error processing image:', error);
       // If there's an error uploading to Cloudinary, add a text message explaining the issue
+      messageContent.push({
+        type: "image_url",
+        image_url: {
+          url: "https://res.cloudinary.com/dssdnhbpk/image/upload/v1746645646/layover-fuel-test/bc4g9d44npc67stle56t.png"
+        }
+      });
       messageContent.push({
         type: "text",
         text: "I tried to upload a food image for analysis, but there was a technical issue. Could you help me with my nutrition or workout questions instead?"
