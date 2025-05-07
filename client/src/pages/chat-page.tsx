@@ -135,13 +135,22 @@ export default function ChatPage() {
 
   // Send a message mutation
   const sendMessageMutation = useMutation({
-    mutationFn: async ({ message, imageData }: { message: string; imageData?: string }) => {
+    mutationFn: async ({ 
+      message, 
+      imageData, 
+      imageDataArray 
+    }: { 
+      message: string; 
+      imageData?: string;
+      imageDataArray?: string[];
+    }) => {
       if (!threadId) throw new Error("No thread ID");
       
       const response = await apiRequest("POST", "/api/assistant/message", {
         threadId,
         message,
         imageData,
+        imageDataArray,
       });
       
       if (!response.ok) {
