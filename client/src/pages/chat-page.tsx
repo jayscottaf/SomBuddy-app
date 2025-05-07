@@ -473,9 +473,15 @@ export default function ChatPage() {
                 overflowY: 'hidden', // Changed from 'auto' for better auto-resizing
                 minHeight: '40px',
               }}
+              // Standard spelling attributes
               spellCheck="true"
+              // iOS/Safari specific
               autoCorrect="on"
               autoCapitalize="sentences"
+              // Chrome-specific attributes
+              data-gramm="true"
+              data-gramm_editor="true"
+              data-enable-grammarly="true"
             />
           </div>
           <Button
