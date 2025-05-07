@@ -454,7 +454,7 @@ export default function ChatPage() {
             onImageSelect={handleImageSelect}
             className="text-gray-400 hover:text-gray-200 p-2"
           />
-          <div className="flex-1 bg-gray-700 rounded-full overflow-hidden">
+          <div className="flex-1 bg-gray-700 rounded-2xl overflow-hidden">
             <textarea
               ref={textareaRef}
               className="w-full bg-gray-700 text-white border-none px-4 py-3 focus:outline-none resize-none"
