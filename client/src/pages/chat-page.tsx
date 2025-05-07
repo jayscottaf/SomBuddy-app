@@ -286,7 +286,7 @@ export default function ChatPage() {
             >
               <div className="flex flex-col space-y-2 max-w-[75%]">
                 {message.imageUrl && (
-                  <div className="rounded-2xl overflow-hidden">
+                  <div className="rounded-lg overflow-hidden inline-block max-w-[250px]">
                     <img
                       src={
                         message.imageUrl.startsWith("data:")
@@ -294,7 +294,9 @@ export default function ChatPage() {
                           : `https://api.openai.com/v1/files/${message.imageUrl}/content`
                       }
                       alt="Uploaded image"
-                      className="w-full object-cover"
+                      className="max-h-[200px] object-cover cursor-pointer hover:opacity-90 transition-opacity"
+                      onClick={() => window.open(message.imageUrl, '_blank')}
+                      title="Click to view full-size image"
                     />
                   </div>
                 )}
@@ -331,14 +333,20 @@ export default function ChatPage() {
 
       {/* Input area - fixed at bottom */}
       <div className="p-4 border-t border-gray-700 bg-gray-800 fixed bottom-0 left-0 right-0 z-20">
-        {/* Display image to be sent */}
+        {/* Display image to be sent - as a thumbnail */}
         {tempImage && (
-          <div className="mb-4">
-            <div className="flex justify-between items-center mb-2">
-              <p className="text-sm text-gray-300">Image to analyze:</p>
+          <div className="mb-4 flex items-center">
+            <div className="flex-shrink-0 mr-3 relative">
+              <img
+                src={tempImage}
+                alt="Preview"
+                className="h-20 w-20 object-cover rounded-lg border border-gray-600"
+                onClick={() => window.open(tempImage, '_blank')}
+                title="Click to view full-size image"
+              />
               <button
                 onClick={() => setTempImage(null)}
-                className="text-gray-400 hover:text-gray-200"
+                className="absolute -top-2 -right-2 bg-gray-700 rounded-full p-1 text-gray-400 hover:text-gray-200 hover:bg-gray-600"
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -356,11 +364,10 @@ export default function ChatPage() {
                 </svg>
               </button>
             </div>
-            <img
-              src={tempImage}
-              alt="Preview"
-              className="w-full max-h-40 object-cover rounded-lg"
-            />
+            <div className="flex-grow">
+              <p className="text-sm text-gray-300">Food image ready to analyze</p>
+              <p className="text-xs text-gray-400">Add a message or send as is. Click image to preview full size.</p>
+            </div>
           </div>
         )}
 
