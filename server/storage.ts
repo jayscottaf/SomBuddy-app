@@ -6,7 +6,7 @@ import {
   dailyPlans, type DailyPlan, type InsertDailyPlan
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, and } from "drizzle-orm";
+import { eq, and, sql } from "drizzle-orm";
 import session from "express-session";
 import connectPg from "connect-pg-simple";
 import { pool } from "./db";
@@ -94,13 +94,14 @@ export class DatabaseStorage implements IStorage {
 
   async getNutritionLogByDate(userId: number, date: Date): Promise<NutritionLog | undefined> {
     const dateString = date.toISOString().split('T')[0];
+    // Use SQL template for date comparison
     const [log] = await db
       .select()
       .from(nutritionLogs)
       .where(
         and(
           eq(nutritionLogs.userId, userId),
-          eq(nutritionLogs.date, new Date(dateString))
+          sql`${nutritionLogs.date}::date = ${dateString}::date`
         )
       );
     return log;
@@ -139,7 +140,7 @@ export class DatabaseStorage implements IStorage {
       .where(
         and(
           eq(workoutLogs.userId, userId),
-          eq(workoutLogs.date, new Date(dateString))
+          sql`${workoutLogs.date}::date = ${dateString}::date`
         )
       );
     return log;
@@ -178,7 +179,7 @@ export class DatabaseStorage implements IStorage {
       .where(
         and(
           eq(healthLogs.userId, userId),
-          eq(healthLogs.date, new Date(dateString))
+          sql`${healthLogs.date}::date = ${dateString}::date`
         )
       );
     return log;
@@ -217,7 +218,7 @@ export class DatabaseStorage implements IStorage {
       .where(
         and(
           eq(dailyPlans.userId, userId),
-          eq(dailyPlans.date, new Date(dateString))
+          sql`${dailyPlans.date}::date = ${dateString}::date`
         )
       );
     return plan;

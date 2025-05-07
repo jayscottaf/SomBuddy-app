@@ -38,9 +38,10 @@ declare module "express-session" {
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Setup session middleware
+  // Setup session middleware with PostgreSQL store
   app.use(
     session({
+      store: storage.sessionStore,
       secret: process.env.SESSION_SECRET || "layover-fuel-secret",
       resave: false,
       saveUninitialized: false,
@@ -336,7 +337,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         // Create a new daily plan
         dailyPlan = await storage.createDailyPlan({
-          date: today,
+          date: today.toISOString().split('T')[0], // Convert Date to string format
           userId: user.id,
           meals: mealPlan,
           workout: workoutPlan,
@@ -403,7 +404,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } else {
         // Create new log
         healthLog = await storage.createHealthLog({
-          date: logDate,
+          date: logDate.toISOString().split('T')[0], // Format date as string
           userId: req.session.userId,
           ...logData,
         });
