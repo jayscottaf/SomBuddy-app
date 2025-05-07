@@ -11,7 +11,7 @@ interface Message {
   id: string;
   role: "user" | "assistant";
   content: string[];
-  imageUrl?: string;
+  imageUrls?: string[]; // Changed to array of image URLs
 }
 
 export default function ChatPage() {
@@ -86,14 +86,30 @@ export default function ChatPage() {
       const formattedMessages = data.messages
         .slice() // Create a copy of the array to avoid mutating the original
         .reverse() // Reverse to get oldest first
-        .map((msg: any) => ({
-          id: msg.id,
-          role: msg.role,
-          content: msg.content.map((content: any) => 
-            content.type === "text" ? content.text.value : ""
-          ).filter(Boolean),
-          imageUrl: msg.content.find((c: any) => c.type === "image_file")?.image_file?.file_id,
-        }));
+        .map((msg: any) => {
+          // Extract all text contents
+          const textContents = msg.content
+            .filter((content: any) => content.type === "text")
+            .map((content: any) => content.text.value)
+            .filter(Boolean);
+          
+          // Extract all image URLs (both direct URLs and file references)
+          const imageUrls = msg.content
+            .filter((c: any) => c.type === "image_url" || c.type === "image_file")
+            .map((c: any) => {
+              if (c.type === "image_url") return c.image_url.url;
+              if (c.type === "image_file") return c.image_file.file_id;
+              return null;
+            })
+            .filter(Boolean);
+          
+          return {
+            id: msg.id,
+            role: msg.role,
+            content: textContents,
+            imageUrls: imageUrls.length > 0 ? imageUrls : undefined,
+          };
+        });
       
       // Add welcome message if no messages
       if (formattedMessages.length === 0) {
@@ -140,22 +156,27 @@ export default function ChatPage() {
         .slice() // Create a copy of the array to avoid mutating the original
         .reverse() // Reverse to get oldest first
         .map((msg: any) => {
-          // Extract the text content
-          const textContent = msg.content
+          // Extract all text contents
+          const textContents = msg.content
             .filter((content: any) => content.type === "text")
             .map((content: any) => content.text.value)
             .filter(Boolean);
           
-          // Extract the image URL from image_url type content
-          const imageUrlContent = msg.content.find((c: any) => c.type === "image_url");
-          const imageUrl = imageUrlContent?.image_url?.url || 
-                          msg.content.find((c: any) => c.type === "image_file")?.image_file?.file_id;
+          // Extract all image URLs (both direct URLs and file references)
+          const imageUrls = msg.content
+            .filter((c: any) => c.type === "image_url" || c.type === "image_file")
+            .map((c: any) => {
+              if (c.type === "image_url") return c.image_url.url;
+              if (c.type === "image_file") return c.image_file.file_id;
+              return null;
+            })
+            .filter(Boolean);
           
           return {
             id: msg.id,
             role: msg.role,
-            content: textContent,
-            imageUrl: imageUrl,
+            content: textContents,
+            imageUrls: imageUrls.length > 0 ? imageUrls : undefined,
           };
         });
       
@@ -216,18 +237,18 @@ export default function ChatPage() {
 
   // Send a message
   const sendMessage = () => {
-    if (!input.trim() && !tempImage) return;
+    if (!input.trim() && tempImages.length === 0) return;
     
-    // Store the current image/input to use in the message
+    // Store the current images/input to use in the message
     const currentInput = input;
-    const currentImage = tempImage;
+    const currentImages = [...tempImages];
     
     // Add user message to the UI immediately
     const userMessage: Message = {
       id: Date.now().toString(),
       role: "user",
       content: currentInput.trim() ? [currentInput] : [], // Only include non-empty content
-      imageUrl: currentImage || undefined,
+      imageUrls: currentImages.length > 0 ? currentImages : undefined,
     };
     
     setMessages((prev) => [...prev, userMessage]);
@@ -241,16 +262,19 @@ export default function ChatPage() {
     
     setMessages((prev) => [...prev, processingMessage]);
     
-    // Clear the input and image BEFORE sending the API request
+    // Clear the input and images BEFORE sending the API request
     // This ensures the UI is ready for another image immediately
     setInput("");
-    setTempImage(null);
+    setTempImages([]);
     
-    // Send the message to the API - show more detailed errors
+    // Send the message to the API - for now, just send the first image
+    // The API will need to be updated to support multiple images
     try {
+      // TODO: Update the API to support multiple images
+      // For now, just send the first image
       sendMessageMutation.mutate({
         message: currentInput,
-        imageData: currentImage || undefined,
+        imageData: currentImages.length > 0 ? currentImages[0] : undefined,
       });
     } catch (error) {
       console.error("Error preparing to send message:", error);
@@ -262,8 +286,8 @@ export default function ChatPage() {
     }
   };
 
-  // Handle image upload
-  const [tempImage, setTempImage] = useState<string | null>(null);
+  // Handle multiple image uploads
+  const [tempImages, setTempImages] = useState<string[]>([]);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   
   // Function to automatically adjust the textarea height based on content
@@ -285,8 +309,14 @@ export default function ChatPage() {
   }, [input]);
   
   const handleImageSelect = (file: File, preview: string) => {
-    setTempImage(preview);
+    // Add the new image to the array
+    setTempImages(prevImages => [...prevImages, preview]);
     // No toast notification needed - the image preview is visible
+  };
+  
+  // Remove an image from the tempImages array
+  const removeImage = (index: number) => {
+    setTempImages(prevImages => prevImages.filter((_, i) => i !== index));
   };
 
   return (
@@ -317,32 +347,36 @@ export default function ChatPage() {
               }`}
             >
               <div className="flex flex-col space-y-2 max-w-[75%]">
-                {message.imageUrl && (
-                  <div className={`rounded-lg overflow-hidden inline-block max-w-[250px] ${
+                {message.imageUrls && message.imageUrls.length > 0 && (
+                  <div className={`flex flex-wrap gap-1 max-w-[250px] ${
                       message.role === "user" ? "ml-auto" : "mr-auto"
                     }`}>
-                    <img
-                      src={
-                        message.imageUrl && message.imageUrl.startsWith("data:")
-                          ? message.imageUrl
-                          : message.imageUrl && message.imageUrl.startsWith("http")
-                            ? message.imageUrl // Direct URL (like Cloudinary)
-                            : message.imageUrl ? `https://api.openai.com/v1/files/${message.imageUrl}/content` : '' // OpenAI file reference
-                      }
-                      alt="Uploaded image"
-                      className="max-h-[200px] object-cover cursor-pointer hover:opacity-90 transition-opacity"
-                      onClick={() => {
-                        if (message.imageUrl) {
-                          const imageUrl = message.imageUrl.startsWith("data:")
-                            ? message.imageUrl
-                            : message.imageUrl.startsWith("http")
-                              ? message.imageUrl
-                              : `https://api.openai.com/v1/files/${message.imageUrl}/content`;
-                          window.open(imageUrl, '_blank');
-                        }
-                      }}
-                      title="Click to view full-size image"
-                    />
+                    {message.imageUrls.map((imageUrl, imgIndex) => (
+                      <div key={imgIndex} className="rounded-lg overflow-hidden inline-block">
+                        <img
+                          src={
+                            imageUrl && imageUrl.startsWith("data:")
+                              ? imageUrl
+                              : imageUrl && imageUrl.startsWith("http")
+                                ? imageUrl // Direct URL (like Cloudinary)
+                                : imageUrl ? `https://api.openai.com/v1/files/${imageUrl}/content` : '' // OpenAI file reference
+                          }
+                          alt={`Uploaded image ${imgIndex + 1}`}
+                          className="max-h-[200px] max-w-[200px] object-cover cursor-pointer hover:opacity-90 transition-opacity"
+                          onClick={() => {
+                            if (imageUrl) {
+                              const fullImageUrl = imageUrl.startsWith("data:")
+                                ? imageUrl
+                                : imageUrl.startsWith("http")
+                                  ? imageUrl
+                                  : `https://api.openai.com/v1/files/${imageUrl}/content`;
+                              window.open(fullImageUrl, '_blank');
+                            }
+                          }}
+                          title="Click to view full-size image"
+                        />
+                      </div>
+                    ))}
                   </div>
                 )}
                 
@@ -415,40 +449,45 @@ export default function ChatPage() {
 
       {/* Input area - fixed at bottom */}
       <div className="p-4 border-t border-gray-800 bg-black fixed bottom-0 left-0 right-0 z-20">
-        {/* Display image to be sent - as a thumbnail */}
-        {tempImage && (
-          <div className="mb-4 flex items-center">
-            <div className="flex-shrink-0 mr-3 relative">
-              <img
-                src={tempImage}
-                alt="Preview"
-                className="h-20 w-20 object-cover rounded-lg border border-gray-600"
-                onClick={() => window.open(tempImage, '_blank')}
-                title="Click to view full-size image"
-              />
-              <button
-                onClick={() => setTempImage(null)}
-                className="absolute -top-2 -right-2 bg-gray-800 rounded-full p-1 text-gray-400 hover:text-gray-200 hover:bg-gray-700"
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <line x1="18" y1="6" x2="6" y2="18"></line>
-                  <line x1="6" y1="6" x2="18" y2="18"></line>
-                </svg>
-              </button>
+        {/* Display images to be sent - as thumbnails */}
+        {tempImages.length > 0 && (
+          <div className="mb-4">
+            <div className="flex items-center mb-2">
+              <p className="text-sm text-gray-300">{tempImages.length} {tempImages.length === 1 ? 'image' : 'images'} ready to analyze</p>
+              <p className="text-xs text-gray-400 ml-2">Add a message or send as is. Click images to preview full size.</p>
             </div>
-            <div className="flex-grow">
-              <p className="text-sm text-gray-300">Food image ready to analyze</p>
-              <p className="text-xs text-gray-400">Add a message or send as is. Click image to preview full size.</p>
+            <div className="flex flex-wrap gap-2">
+              {tempImages.map((img, index) => (
+                <div key={index} className="relative">
+                  <img
+                    src={img}
+                    alt={`Preview ${index + 1}`}
+                    className="h-20 w-20 object-cover rounded-lg border border-gray-600 hover:opacity-90 transition-opacity"
+                    onClick={() => window.open(img, '_blank')}
+                    title="Click to view full-size image"
+                  />
+                  <button
+                    onClick={() => removeImage(index)}
+                    className="absolute -top-2 -right-2 bg-gray-800 rounded-full p-1 text-gray-400 hover:text-gray-200 hover:bg-gray-700"
+                    title="Remove image"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <line x1="18" y1="6" x2="6" y2="18"></line>
+                      <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                  </button>
+                </div>
+              ))}
             </div>
           </div>
         )}
@@ -493,7 +532,7 @@ export default function ChatPage() {
             variant="ghost"
             className="h-10 w-10 rounded-full bg-blue-500 text-white hover:bg-blue-600"
             onClick={sendMessage}
-            disabled={sendMessageMutation.isPending || isLoading || (!input.trim() && !tempImage)}
+            disabled={sendMessageMutation.isPending || isLoading || (!input.trim() && tempImages.length === 0)}
           >
             {sendMessageMutation.isPending ? (
               <Loader2 className="h-5 w-5 animate-spin" />
