@@ -1,5 +1,6 @@
 import React, { useRef } from "react";
 import { Camera } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 interface ImageUploadProps {
   onImageSelect: (file: File, preview: string) => void;
@@ -8,6 +9,7 @@ interface ImageUploadProps {
 
 export function ImageUpload({ onImageSelect, className = "" }: ImageUploadProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { toast } = useToast();
 
   const compressImage = (file: File): Promise<string> => {
     return new Promise((resolve, reject) => {
@@ -68,6 +70,31 @@ export function ImageUpload({ onImageSelect, className = "" }: ImageUploadProps)
 
     const file = files[0];
     
+    // Check file size first (max 10MB)
+    const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+    if (file.size > MAX_FILE_SIZE) {
+      console.error("File too large:", file.size);
+      toast({
+        title: "Image too large",
+        description: "Please select a smaller image (max 10MB).",
+        variant: "destructive",
+      });
+      event.target.value = ''; // Clear the input
+      return;
+    }
+    
+    // Validate image type
+    if (!file.type.startsWith('image/')) {
+      console.error("Invalid file type:", file.type);
+      toast({
+        title: "Invalid file",
+        description: "Please select a valid image file.",
+        variant: "destructive",
+      });
+      event.target.value = ''; // Clear the input
+      return;
+    }
+    
     try {
       // Compress the image before sending
       const compressedImageDataUrl = await compressImage(file);
@@ -76,18 +103,28 @@ export function ImageUpload({ onImageSelect, className = "" }: ImageUploadProps)
       const compressedBlob = await fetch(compressedImageDataUrl).then(r => r.blob());
       const compressedFile = new File([compressedBlob], file.name, { type: 'image/jpeg' });
       
+      // Check if the compressed image is still too large (max 5MB for server)
+      if (compressedBlob.size > 5 * 1024 * 1024) {
+        console.warn("Compressed image still too large:", compressedBlob.size);
+        toast({
+          title: "Image too large",
+          description: "Image is still too large after compression. Please use a smaller image or one with less detail.",
+          variant: "destructive",
+        });
+        event.target.value = ''; // Clear the input
+        return;
+      }
+      
       // Pass both the file and the preview URL
       onImageSelect(compressedFile, compressedImageDataUrl);
     } catch (error) {
       console.error("Error compressing image:", error);
-      // Fallback to original if compression fails
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        if (e.target?.result) {
-          onImageSelect(file, e.target.result as string);
-        }
-      };
-      reader.readAsDataURL(file);
+      toast({
+        title: "Processing error",
+        description: "Error processing image. Please try another image.",
+        variant: "destructive",
+      });
+      event.target.value = ''; // Clear the input
     }
   };
 

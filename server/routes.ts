@@ -567,21 +567,59 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Message or image is required" });
       }
       
-      // Log image data size if it exists
+      // Process and validate image data
+      let processedImageData = imageData;
       if (imageData) {
-        const imageSizeKB = Math.round(imageData.length / 1024);
-        console.log(`Processing image of approximately ${imageSizeKB}KB`);
+        try {
+          const imageSizeKB = Math.round(imageData.length / 1024);
+          console.log(`Processing image of approximately ${imageSizeKB}KB`);
+          
+          // Check if image data is too large (OpenAI limit is ~20MB, but we'll be more conservative)
+          if (imageSizeKB > 5000) { // 5MB limit
+            return res.status(413).json({ 
+              message: "Image is too large. Please use a smaller image (maximum 5MB)." 
+            });
+          }
+        } catch (imgError) {
+          console.error("Error processing image data:", imgError);
+          return res.status(400).json({ message: "Invalid image data format" });
+        }
       }
       
       try {
         // Add the message to the thread
         console.log(`Adding message to thread ${threadId}`);
+        
+        // For debugging, log the image data size if present
+        if (imageData) {
+          const imageSizeKB = Math.round(imageData.length / 1024);
+          console.log(`Sending image to OpenAI API, size: ${imageSizeKB}KB`);
+        }
+        
         await addMessageToThread(threadId, message || "Analyze this image", imageData);
         console.log("Message added successfully");
       } catch (messageError) {
         console.error("Error adding message to thread:", messageError);
-        return res.status(500).json({ 
-          message: "Failed to add message to thread", 
+        
+        // Provide more detailed error messages for common issues
+        let errorMessage = "Failed to add message to thread";
+        let statusCode = 500;
+        
+        if (messageError instanceof Error) {
+          const errorText = messageError.message.toLowerCase();
+          
+          // Check for common OpenAI API errors
+          if (errorText.includes('too large') || errorText.includes('file size')) {
+            errorMessage = "Image is too large for the OpenAI API. Please try with a smaller image.";
+            statusCode = 413; // Request Entity Too Large
+          } else if (errorText.includes('rate limit') || errorText.includes('too many requests')) {
+            errorMessage = "Rate limit exceeded. Please try again in a few moments.";
+            statusCode = 429; // Too Many Requests
+          }
+        }
+        
+        return res.status(statusCode).json({ 
+          message: errorMessage, 
           error: messageError instanceof Error ? messageError.message : String(messageError) 
         });
       }
