@@ -122,17 +122,22 @@ export async function addMessageToThread(
       }
     } catch (error) {
       console.error('Error processing image:', error);
-      // If there's an error uploading to Cloudinary, add a text message explaining the issue
-      messageContent.push({
-        type: "image_url",
-        image_url: {
-          url: "https://res.cloudinary.com/dssdnhbpk/image/upload/v1746645646/layover-fuel-test/bc4g9d44npc67stle56t.png"
-        }
-      });
-      messageContent.push({
-        type: "text",
-        text: "I tried to upload a food image for analysis, but there was a technical issue. Could you help me with my nutrition or workout questions instead?"
-      });
+      
+      // In case of any error, we'll still send the user's message text if available
+      // But we'll add a note about the image upload failure
+      if (!messageContent.some(item => item.type === "text")) {
+        messageContent.push({
+          type: "text",
+          text: "I tried to upload a food image for analysis, but there was a technical issue. Could you help me with my nutrition or workout questions instead?"
+        });
+      } else {
+        // Add a note about the image upload failure to the existing message
+        messageContent.push({
+          type: "text",
+          text: "Note: There was an issue processing your image. Let me answer your other questions."
+        });
+      }
+      
       console.error(`Failed to process image: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
