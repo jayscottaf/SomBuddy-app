@@ -288,14 +288,14 @@ export default function ChatPage() {
   };
 
   return (
-    <div className="flex flex-col h-screen bg-gray-900 overflow-hidden">
+    <div className="flex flex-col h-screen bg-black overflow-hidden">
       {/* Fixed Header */}
-      <div className="flex items-center justify-between bg-gray-800 px-4 py-3 border-b border-gray-700 fixed top-0 left-0 right-0 z-20">
+      <div className="flex items-center justify-between bg-black px-4 py-3 border-b border-gray-800 fixed top-0 left-0 right-0 z-20">
         <div className="flex items-center space-x-2">
           <h1 className="text-xl font-semibold text-white">Layover Fuel Assistant</h1>
         </div>
         <Link href="/dashboard">
-          <Button className="bg-transparent hover:bg-blue-500 text-gray-300 hover:text-white border border-gray-700 hover:border-transparent">
+          <Button className="bg-transparent hover:bg-blue-500 text-gray-300 hover:text-white border border-gray-800 hover:border-transparent">
             Dashboard
           </Button>
         </Link>
@@ -305,7 +305,7 @@ export default function ChatPage() {
       <div className="h-14"></div>
 
       {/* Messages container - scrollable area between fixed header and input */}
-      <div className="flex-1 overflow-y-auto p-4 bg-gray-900 pb-32">
+      <div className="flex-1 overflow-y-auto p-4 bg-black pb-32">
         <div className="flex flex-col space-y-4">
           {messages.map((message, index) => (
             <div
@@ -410,7 +410,7 @@ export default function ChatPage() {
       </div>
 
       {/* Input area - fixed at bottom */}
-      <div className="p-4 border-t border-gray-700 bg-gray-800 fixed bottom-0 left-0 right-0 z-20">
+      <div className="p-4 border-t border-gray-800 bg-black fixed bottom-0 left-0 right-0 z-20">
         {/* Display image to be sent - as a thumbnail */}
         {tempImage && (
           <div className="mb-4 flex items-center">
