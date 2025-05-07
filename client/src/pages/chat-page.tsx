@@ -352,13 +352,15 @@ export default function ChatPage() {
                 message.role === "user" ? "justify-end" : "justify-start"
               }`}
             >
-              <div className="flex flex-col space-y-2 max-w-[75%]">
+              <div className="flex flex-col space-y-2 max-w-[75%] w-full">
                 {message.imageUrls && message.imageUrls.length > 0 && (
-                  <div className={`flex flex-wrap gap-1 max-w-[250px] ${
-                      message.role === "user" ? "ml-auto" : "mr-auto"
+                  <div className={`flex flex-wrap gap-1 max-w-[90%] ${
+                      message.role === "user" ? "ml-auto justify-end" : "mr-auto justify-start"
                     }`}>
                     {message.imageUrls.map((imageUrl, imgIndex) => (
-                      <div key={imgIndex} className="rounded-lg overflow-hidden inline-block">
+                      <div key={imgIndex} className={`rounded-lg overflow-hidden inline-block ${
+                        message.role === "user" ? "ml-1" : "mr-1"
+                      }`}>
                         <img
                           src={
                             imageUrl && imageUrl.startsWith("data:")
@@ -368,7 +370,7 @@ export default function ChatPage() {
                                 : imageUrl ? `https://api.openai.com/v1/files/${imageUrl}/content` : '' // OpenAI file reference
                           }
                           alt={`Uploaded image ${imgIndex + 1}`}
-                          className="max-h-[200px] max-w-[200px] object-cover cursor-pointer hover:opacity-90 transition-opacity"
+                          className="max-h-[160px] max-w-[160px] object-cover cursor-pointer hover:opacity-90 transition-opacity"
                           onClick={() => {
                             if (imageUrl) {
                               const fullImageUrl = imageUrl.startsWith("data:")
