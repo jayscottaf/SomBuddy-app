@@ -473,6 +473,9 @@ export default function ChatPage() {
                 overflowY: 'hidden', // Changed from 'auto' for better auto-resizing
                 minHeight: '40px',
               }}
+              spellCheck="true"
+              autoCorrect="on"
+              autoCapitalize="sentences"
             />
           </div>
           <Button
