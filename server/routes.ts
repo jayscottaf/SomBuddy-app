@@ -593,11 +593,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // For debugging, log the image data size if present
         if (imageData) {
           const imageSizeKB = Math.round(imageData.length / 1024);
-          console.log(`Sending image to OpenAI API, size: ${imageSizeKB}KB`);
+          console.log(`Processing image upload, size: ${imageSizeKB}KB`);
+          console.log(`Image will be uploaded to Cloudinary and then sent to OpenAI`);
         }
         
         await addMessageToThread(threadId, message || "Analyze this image", imageData);
-        console.log("Message added successfully");
+        console.log("Message and image added successfully");
       } catch (messageError) {
         console.error("Error adding message to thread:", messageError);
         
@@ -608,13 +609,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (messageError instanceof Error) {
           const errorText = messageError.message.toLowerCase();
           
-          // Check for common OpenAI API errors
-          if (errorText.includes('too large') || errorText.includes('file size')) {
-            errorMessage = "Image is too large for the OpenAI API. Please try with a smaller image.";
+          // Check for common errors
+          if (errorText.includes('cloudinary')) {
+            errorMessage = "Error uploading image to cloud storage. Please try again or use a different image.";
+            statusCode = 502; // Bad Gateway - issue with external service
+          } else if (errorText.includes('too large') || errorText.includes('file size')) {
+            errorMessage = "Image is too large. Please try with a smaller image.";
             statusCode = 413; // Request Entity Too Large
           } else if (errorText.includes('rate limit') || errorText.includes('too many requests')) {
             errorMessage = "Rate limit exceeded. Please try again in a few moments.";
             statusCode = 429; // Too Many Requests
+          } else if (errorText.includes('invalid') && errorText.includes('format')) {
+            errorMessage = "Invalid image format. Please try a different image.";
+            statusCode = 400; // Bad Request
           }
         }
         

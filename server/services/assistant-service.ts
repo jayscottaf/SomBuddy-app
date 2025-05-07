@@ -1,4 +1,5 @@
 import fetch from 'node-fetch';
+import { uploadImageToCloudinary } from './cloudinary-service';
 
 // API endpoint for OpenAI API proxying
 export const OPENAI_API_BASE = 'https://api.openai.com';
@@ -71,7 +72,7 @@ export async function addMessageToThread(
     messageContent.push({ type: "text", text: content });
   }
   
-  // If we have image data, upload it as a file first and then reference it
+  // If we have image data, upload it to Cloudinary and then reference it
   if (imageData) {
     try {
       console.log('Processing image data...');
@@ -80,31 +81,37 @@ export async function addMessageToThread(
       const imageSize = imageData.length;
       console.log(`Image data size: ${Math.round(imageSize / 1024)}KB`);
       
-      // For OpenAI assistants, we need to use a publicly accessible URL
-      // Since we can't easily create one here, we'll use an alternative approach
+      console.log('Uploading image to Cloudinary...');
       
-      // Using a sample image URL for a test image from OpenAI docs
-      // This is a temporary solution to get past the format check
-      const publicImageUrl = "https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/Gfp-wisconsin-madison-the-nature-boardwalk.jpg/2560px-Gfp-wisconsin-madison-the-nature-boardwalk.jpg";
+      // Upload the image to Cloudinary and get a public URL
+      const imageUrl = await uploadImageToCloudinary(imageData);
+      console.log(`Image uploaded successfully: ${imageUrl}`);
       
-      // Add to content array as image_url with a public URL
+      // Add to content array as image_url with the public Cloudinary URL
       messageContent.push({
         type: "image_url",
         image_url: {
-          url: publicImageUrl
+          url: imageUrl
         }
       });
       
-      // Also add a text description mentioning this is a fallback
-      messageContent.push({
-        type: "text",
-        text: "Note: I tried to upload a food image for analysis, but there was a technical issue. I'm working to fix this. In the meantime, could you help me with my nutrition or workout questions?"
-      });
+      // Add context about what the user wants analyzed
+      if (!content || content.trim() === '') {
+        messageContent.push({
+          type: "text",
+          text: "Please analyze this food image for nutritional content."
+        });
+      }
       
-      console.log('Fallback image and explanatory message added to content');
+      console.log('Image successfully added to message content');
     } catch (error) {
       console.error('Error processing image:', error);
-      throw new Error(`Failed to process image: ${error instanceof Error ? error.message : String(error)}`);
+      // If there's an error uploading to Cloudinary, add a text message explaining the issue
+      messageContent.push({
+        type: "text",
+        text: "I tried to upload a food image for analysis, but there was a technical issue. Could you help me with my nutrition or workout questions instead?"
+      });
+      console.error(`Failed to process image: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
   

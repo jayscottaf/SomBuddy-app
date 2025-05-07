@@ -156,29 +156,44 @@ export default function ChatPage() {
       
       // Try to parse the detailed error information if available
       let errorMessage = "Failed to send message. Please try again.";
-      let imageError = false;
+      let errorTitle = "Error";
       
       if (error instanceof Error) {
+        // If there's a cause with structured error information
         if ('cause' in error) {
           const cause = error.cause as any;
-          if (cause && cause.error) {
-            errorMessage = `Error: ${cause.error}`;
+          if (cause && cause.message) {
+            errorMessage = cause.message;
           }
         }
         
-        // Check for common image-related errors in the error message
+        // Check for common error types in the error message
         const errorString = error.message.toLowerCase();
-        if (errorString.includes('image') || 
-            errorString.includes('file') || 
-            errorString.includes('too large') || 
-            errorString.includes('size')) {
-          imageError = true;
+        
+        // Handle different types of errors with specific messages
+        if (errorString.includes('cloud') || errorString.includes('storage')) {
+          errorTitle = "Cloud Storage Error";
+          errorMessage = "Error uploading image to cloud storage. Please try again with a different image.";
+        } else if (errorString.includes('image') || 
+                  errorString.includes('file') || 
+                  errorString.includes('too large') || 
+                  errorString.includes('size')) {
+          errorTitle = "Image Error";
           errorMessage = "Image too large. Please try with a smaller image or reduce its quality.";
+        } else if (errorString.includes('format') || errorString.includes('invalid')) {
+          errorTitle = "Format Error";
+          errorMessage = "Invalid image format. Please try with a different image.";
+        } else if (errorString.includes('timeout')) {
+          errorTitle = "Timeout Error";
+          errorMessage = "The AI took too long to respond. Please try again or ask a different question.";
+        } else if (errorString.includes('rate limit') || errorString.includes('too many requests')) {
+          errorTitle = "Rate Limit";
+          errorMessage = "You've made too many requests. Please wait a moment and try again.";
         }
       }
       
       toast({
-        title: imageError ? "Image Error" : "Error",
+        title: errorTitle,
         description: errorMessage,
         variant: "destructive",
       });
