@@ -259,6 +259,25 @@ export default function ChatPage() {
 
   // Handle image upload
   const [tempImage, setTempImage] = useState<string | null>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  
+  // Function to automatically adjust the textarea height based on content
+  const autoResizeTextarea = () => {
+    const textarea = textareaRef.current;
+    if (textarea) {
+      // Reset height to auto to get the correct scrollHeight
+      textarea.style.height = 'auto';
+      
+      // Set the height to match the content (with a max of 150px)
+      const newHeight = Math.min(textarea.scrollHeight, 150);
+      textarea.style.height = `${newHeight}px`;
+    }
+  };
+  
+  // Effect to resize the textarea whenever input changes
+  useEffect(() => {
+    autoResizeTextarea();
+  }, [input]);
   
   const handleImageSelect = (file: File, preview: string) => {
     setTempImage(preview);
@@ -300,22 +319,24 @@ export default function ChatPage() {
                   <div className="rounded-lg overflow-hidden inline-block max-w-[250px]">
                     <img
                       src={
-                        message.imageUrl.startsWith("data:")
+                        message.imageUrl && message.imageUrl.startsWith("data:")
                           ? message.imageUrl
-                          : message.imageUrl.startsWith("http")
+                          : message.imageUrl && message.imageUrl.startsWith("http")
                             ? message.imageUrl // Direct URL (like Cloudinary)
-                            : `https://api.openai.com/v1/files/${message.imageUrl}/content` // OpenAI file reference
+                            : message.imageUrl ? `https://api.openai.com/v1/files/${message.imageUrl}/content` : '' // OpenAI file reference
                       }
                       alt="Uploaded image"
                       className="max-h-[200px] object-cover cursor-pointer hover:opacity-90 transition-opacity"
-                      onClick={() => window.open(
-                        message.imageUrl.startsWith("data:")
-                          ? message.imageUrl
-                          : message.imageUrl.startsWith("http")
+                      onClick={() => {
+                        if (message.imageUrl) {
+                          const imageUrl = message.imageUrl.startsWith("data:")
                             ? message.imageUrl
-                            : `https://api.openai.com/v1/files/${message.imageUrl}/content`,
-                        '_blank'
-                      )}
+                            : message.imageUrl.startsWith("http")
+                              ? message.imageUrl
+                              : `https://api.openai.com/v1/files/${message.imageUrl}/content`;
+                          window.open(imageUrl, '_blank');
+                        }
+                      }}
                       title="Click to view full-size image"
                     />
                   </div>
@@ -329,11 +350,48 @@ export default function ChatPage() {
                         : "bg-gray-700 text-white rounded-tl-none"
                     }`}
                   >
-                    {message.content.map((text, i) => (
-                      <p key={i} className="mb-1">
-                        {text}
-                      </p>
-                    ))}
+                    {message.content.map((text, i) => {
+                      // Check if text contains list-like formatting (bullets, numbers, etc.)
+                      const hasListItems = text.includes("- ") || 
+                                          /\d+\.\s/.test(text) || 
+                                          text.includes("* ") ||
+                                          text.includes("• ");
+                      
+                      if (hasListItems) {
+                        // Split by common list separators
+                        const lines = text.split(/\n/);
+                        return (
+                          <div key={i} className="mb-2">
+                            {lines.map((line, lineIndex) => {
+                              // Check if this line is a list item
+                              const isListItem = line.trim().startsWith("- ") || 
+                                              /^\d+\.\s/.test(line.trim()) ||
+                                              line.trim().startsWith("* ") ||
+                                              line.trim().startsWith("• ");
+                              
+                              if (isListItem) {
+                                return (
+                                  <div key={lineIndex} className="flex mb-1">
+                                    <div className="mr-2 flex-shrink-0">
+                                      {line.trim().startsWith("- ") || line.trim().startsWith("* ") || line.trim().startsWith("• ") ? "•" : line.trim().match(/^\d+\./)?.[0]}
+                                    </div>
+                                    <div>{line.replace(/^-\s|\*\s|•\s|\d+\.\s/, "")}</div>
+                                  </div>
+                                );
+                              } else {
+                                return <p key={lineIndex} className="mb-1">{line}</p>;
+                              }
+                            })}
+                          </div>
+                        );
+                      } else {
+                        return (
+                          <p key={i} className="mb-1">
+                            {text}
+                          </p>
+                        );
+                      }
+                    })}
                     
                     {message.id === "processing" && (
                       <div className="flex items-center mt-1">
@@ -398,6 +456,7 @@ export default function ChatPage() {
           />
           <div className="flex-1 bg-gray-700 rounded-full overflow-hidden">
             <textarea
+              ref={textareaRef}
               className="w-full bg-gray-700 text-white border-none px-4 py-3 focus:outline-none resize-none"
               placeholder="Message..."
               rows={1}
@@ -411,8 +470,7 @@ export default function ChatPage() {
                 }
               }}
               style={{ 
-                overflowY: 'auto', 
-                maxHeight: '100px',
+                overflowY: 'hidden', // Changed from 'auto' for better auto-resizing
                 minHeight: '40px',
               }}
             />
