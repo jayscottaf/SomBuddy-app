@@ -236,7 +236,7 @@ export default function ChatPage() {
           <h1 className="text-xl font-semibold text-white">Layover Fuel Assistant</h1>
         </div>
         <Link href="/dashboard">
-          <Button variant="ghost" className="text-gray-300 hover:text-white">
+          <Button className="bg-transparent hover:bg-blue-500 text-gray-300 hover:text-white border border-gray-700 hover:border-transparent">
             Dashboard
           </Button>
         </Link>
