@@ -347,7 +347,7 @@ export default function ChatPage() {
                     className={`rounded-2xl p-3 ${
                       message.role === "user"
                         ? "bg-blue-500 text-white rounded-tr-none"
-                        : "bg-gray-700 text-white rounded-tl-none"
+                        : "bg-gray-800 text-white rounded-tl-none"
                     }`}
                   >
                     {message.content.map((text, i) => {
@@ -424,7 +424,7 @@ export default function ChatPage() {
               />
               <button
                 onClick={() => setTempImage(null)}
-                className="absolute -top-2 -right-2 bg-gray-700 rounded-full p-1 text-gray-400 hover:text-gray-200 hover:bg-gray-600"
+                className="absolute -top-2 -right-2 bg-gray-800 rounded-full p-1 text-gray-400 hover:text-gray-200 hover:bg-gray-700"
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -454,10 +454,10 @@ export default function ChatPage() {
             onImageSelect={handleImageSelect}
             className="text-gray-400 hover:text-gray-200 p-2"
           />
-          <div className="flex-1 bg-gray-700 rounded-2xl overflow-hidden">
+          <div className="flex-1 bg-gray-800 rounded-2xl overflow-hidden">
             <textarea
               ref={textareaRef}
-              className="w-full bg-gray-700 text-white border-none px-4 py-3 focus:outline-none resize-none"
+              className="w-full bg-gray-800 text-white border-none px-4 py-3 focus:outline-none resize-none"
               placeholder="Message..."
               rows={1}
               value={input}
