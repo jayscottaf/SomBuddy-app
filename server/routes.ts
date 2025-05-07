@@ -184,18 +184,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       );
       
       // Update session with the new data
-      req.session.onboarding.userData = {
-        ...onboarding.userData,
-        [response.field]: response.value,
-      };
-      
-      // If there's a next question, update it
-      if (response.nextQuestion) {
-        req.session.onboarding.currentQuestion = response.nextQuestion;
+      if (req.session.onboarding) {
+        req.session.onboarding.userData = {
+          ...onboarding.userData,
+          [response.field]: response.value,
+        };
+        
+        // If there's a next question, update it
+        if (response.nextQuestion) {
+          req.session.onboarding.currentQuestion = response.nextQuestion;
+        }
       }
       
       // If onboarding is complete, save user data
-      if (response.isComplete) {
+      if (response.isComplete && req.session.onboarding) {
         const userData = req.session.onboarding.userData;
         
         // Update user record with all collected data
@@ -436,7 +438,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } else {
         // Create new log
         nutritionLog = await storage.createNutritionLog({
-          date: logDate,
+          date: logDate.toISOString().split('T')[0], // Format date as string
           userId: req.session.userId,
           ...logData,
         });
@@ -468,7 +470,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } else {
         // Create new log
         workoutLog = await storage.createWorkoutLog({
-          date: logDate,
+          date: logDate.toISOString().split('T')[0], // Format date as string
           userId: req.session.userId,
           ...logData,
         });
