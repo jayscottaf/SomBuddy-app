@@ -102,13 +102,7 @@ export async function addMessageToThread(
           }
         });
         
-        // Add context about what the user wants analyzed
-        if (!content || content.trim() === '') {
-          messageContent.push({
-            type: "text",
-            text: "Please analyze this food image for nutritional content."
-          });
-        }
+        // Don't add any default text - the assistant should know to analyze the image
         
         console.log('Image successfully added to message content');
       } catch (error) {

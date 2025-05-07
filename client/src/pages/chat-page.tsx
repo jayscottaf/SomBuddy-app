@@ -222,7 +222,7 @@ export default function ChatPage() {
     const userMessage: Message = {
       id: Date.now().toString(),
       role: "user",
-      content: input.trim() ? [input] : [],
+      content: input.trim() ? [input] : [], // Only include non-empty content
       imageUrl: tempImage || undefined,
     };
     
@@ -344,7 +344,7 @@ export default function ChatPage() {
                   </div>
                 )}
                 
-                {(message.content.length > 0 || message.id === "processing") && (
+                {((message.content.length > 0 && message.content[0]?.trim() !== "") || message.id === "processing") && (
                   <div
                     className={`rounded-2xl p-3 ${
                       message.role === "user"

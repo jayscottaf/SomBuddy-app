@@ -597,7 +597,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           console.log(`Image will be uploaded to Cloudinary and then sent to OpenAI`);
         }
         
-        await addMessageToThread(threadId, message || "Analyze this image", imageData);
+        // When sending just an image, don't add default text - the assistant should know what to do
+        await addMessageToThread(threadId, message || "", imageData);
         console.log("Message and image added successfully");
       } catch (messageError) {
         console.error("Error adding message to thread:", messageError);
