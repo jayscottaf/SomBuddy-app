@@ -139,14 +139,25 @@ export default function ChatPage() {
       const newMessages = data.messages
         .slice() // Create a copy of the array to avoid mutating the original
         .reverse() // Reverse to get oldest first
-        .map((msg: any) => ({
-          id: msg.id,
-          role: msg.role,
-          content: msg.content.map((content: any) => 
-            content.type === "text" ? content.text.value : ""
-          ).filter(Boolean),
-          imageUrl: msg.content.find((c: any) => c.type === "image_file")?.image_file?.file_id,
-        }));
+        .map((msg: any) => {
+          // Extract the text content
+          const textContent = msg.content
+            .filter((content: any) => content.type === "text")
+            .map((content: any) => content.text.value)
+            .filter(Boolean);
+          
+          // Extract the image URL from image_url type content
+          const imageUrlContent = msg.content.find((c: any) => c.type === "image_url");
+          const imageUrl = imageUrlContent?.image_url?.url || 
+                          msg.content.find((c: any) => c.type === "image_file")?.image_file?.file_id;
+          
+          return {
+            id: msg.id,
+            role: msg.role,
+            content: textContent,
+            imageUrl: imageUrl,
+          };
+        });
       
       setMessages(newMessages);
       setInput("");
@@ -291,11 +302,20 @@ export default function ChatPage() {
                       src={
                         message.imageUrl.startsWith("data:")
                           ? message.imageUrl
-                          : `https://api.openai.com/v1/files/${message.imageUrl}/content`
+                          : message.imageUrl.startsWith("http")
+                            ? message.imageUrl // Direct URL (like Cloudinary)
+                            : `https://api.openai.com/v1/files/${message.imageUrl}/content` // OpenAI file reference
                       }
                       alt="Uploaded image"
                       className="max-h-[200px] object-cover cursor-pointer hover:opacity-90 transition-opacity"
-                      onClick={() => window.open(message.imageUrl, '_blank')}
+                      onClick={() => window.open(
+                        message.imageUrl.startsWith("data:")
+                          ? message.imageUrl
+                          : message.imageUrl.startsWith("http")
+                            ? message.imageUrl
+                            : `https://api.openai.com/v1/files/${message.imageUrl}/content`,
+                        '_blank'
+                      )}
                       title="Click to view full-size image"
                     />
                   </div>
