@@ -281,10 +281,7 @@ export default function ChatPage() {
   
   const handleImageSelect = (file: File, preview: string) => {
     setTempImage(preview);
-    toast({
-      title: "Image added",
-      description: "Your food photo is ready to be analyzed. Add a message or just send it as is.",
-    });
+    // No toast notification needed - the image preview is visible
   };
 
   return (
