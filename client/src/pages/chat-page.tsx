@@ -316,7 +316,9 @@ export default function ChatPage() {
             >
               <div className="flex flex-col space-y-2 max-w-[75%]">
                 {message.imageUrl && (
-                  <div className="rounded-lg overflow-hidden inline-block max-w-[250px]">
+                  <div className={`rounded-lg overflow-hidden inline-block max-w-[250px] ${
+                      message.role === "user" ? "ml-auto" : "mr-auto"
+                    }`}>
                     <img
                       src={
                         message.imageUrl && message.imageUrl.startsWith("data:")
