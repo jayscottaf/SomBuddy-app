@@ -117,6 +117,11 @@ export function ImageUpload({ onImageSelect, className = "" }: ImageUploadProps)
       
       // Pass both the file and the preview URL
       onImageSelect(compressedFile, compressedImageDataUrl);
+      
+      // Reset the file input to allow selecting the same file again
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
     } catch (error) {
       console.error("Error compressing image:", error);
       toast({

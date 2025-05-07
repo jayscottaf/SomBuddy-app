@@ -159,8 +159,8 @@ export default function ChatPage() {
           };
         });
       
+      // Update the messages state with the processed messages from the server
       setMessages(newMessages);
-      setInput("");
     },
     onError: (error) => {
       console.error("Error sending message:", error);
@@ -218,12 +218,16 @@ export default function ChatPage() {
   const sendMessage = () => {
     if (!input.trim() && !tempImage) return;
     
+    // Store the current image/input to use in the message
+    const currentInput = input;
+    const currentImage = tempImage;
+    
     // Add user message to the UI immediately
     const userMessage: Message = {
       id: Date.now().toString(),
       role: "user",
-      content: input.trim() ? [input] : [], // Only include non-empty content
-      imageUrl: tempImage || undefined,
+      content: currentInput.trim() ? [currentInput] : [], // Only include non-empty content
+      imageUrl: currentImage || undefined,
     };
     
     setMessages((prev) => [...prev, userMessage]);
@@ -237,16 +241,17 @@ export default function ChatPage() {
     
     setMessages((prev) => [...prev, processingMessage]);
     
+    // Clear the input and image BEFORE sending the API request
+    // This ensures the UI is ready for another image immediately
+    setInput("");
+    setTempImage(null);
+    
     // Send the message to the API - show more detailed errors
     try {
       sendMessageMutation.mutate({
-        message: input,
-        imageData: tempImage || undefined,
+        message: currentInput,
+        imageData: currentImage || undefined,
       });
-      
-      // Clear the input and image
-      setInput("");
-      setTempImage(null);
     } catch (error) {
       console.error("Error preparing to send message:", error);
       toast({
