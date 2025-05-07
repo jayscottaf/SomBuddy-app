@@ -14,20 +14,34 @@ cloudinary.config({
  */
 export async function uploadImageToCloudinary(base64Image: string): Promise<string> {
   try {
+    console.log('Starting Cloudinary upload process...');
+    
     // For data URLs, extract just the base64 part
     let imageData = base64Image;
     if (base64Image.startsWith('data:')) {
+      console.log('Processing data URL format image');
       const parts = base64Image.split(',');
       imageData = parts[1];
+    } else {
+      console.log('Processing base64 string (not data URL)');
     }
     
+    // Make sure we have a valid data URL for Cloudinary
+    const uploadData = base64Image.startsWith('data:') 
+      ? base64Image 
+      : `data:image/jpeg;base64,${imageData}`;
+    
+    console.log('Uploading to Cloudinary servers...');
+    
     // Upload to Cloudinary
-    const result = await cloudinary.uploader.upload(`data:image/jpeg;base64,${imageData}`, {
+    const result = await cloudinary.uploader.upload(uploadData, {
       folder: 'layover-fuel',
       resource_type: 'image',
       // Add a unique filename based on timestamp
       public_id: `user_upload_${Date.now()}`,
     });
+    
+    console.log(`Cloudinary upload successful! URL: ${result.secure_url}`);
     
     // Return the secure URL
     return result.secure_url;

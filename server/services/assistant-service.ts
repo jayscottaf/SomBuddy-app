@@ -111,9 +111,14 @@ export async function addMessageToThread(
         }
         
         console.log('Image successfully added to message content');
-      } catch (cloudinaryError) {
-        console.error('Error uploading to Cloudinary:', cloudinaryError);
-        throw new Error(`Cloudinary upload failed: ${cloudinaryError.message}`);
+      } catch (error) {
+        console.error('Error uploading to Cloudinary:', error);
+        // Re-throw with proper error message
+        if (error instanceof Error) {
+          throw new Error(`Cloudinary upload failed: ${error.message}`);
+        } else {
+          throw new Error(`Cloudinary upload failed: Unknown error`);
+        }
       }
     } catch (error) {
       console.error('Error processing image:', error);
