@@ -1,11 +1,7 @@
-import path from "path";
-import { fileURLToPath } from "url";
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 const app = express();
 // Increase JSON payload size limit for image uploads
 app.use(express.json({ limit: '50mb' }));
@@ -13,7 +9,6 @@ app.use(express.urlencoded({ extended: false, limit: '50mb' }));
 
 app.use((req, res, next) => {
   const start = Date.now();
-
   const path = req.path;
   let capturedJsonResponse: Record<string, any> | undefined = undefined;
 
@@ -72,12 +67,5 @@ app.use((req, res, next) => {
     reusePort: true,
   }, () => {
     log(`serving on port ${port}`);
-  }).on('error', (err) => {
-    if (err.code === 'EADDRINUSE') {
-      log(`Port ${port} is already in use. Please stop other processes and try again.`);
-      process.exit(1);
-    } else {
-      throw err;
-    }
   });
 })();

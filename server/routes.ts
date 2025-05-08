@@ -727,11 +727,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Add health check endpoint
-  app.get("/", (_req, res) => {
-    res.status(200).send("OK");
-  });
-
   const httpServer = createServer(app);
   return httpServer;
 }
