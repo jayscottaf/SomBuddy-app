@@ -341,10 +341,10 @@ export default function ChatPage() {
 
       
       {/* Spacer to account for fixed header */}
-      <div className="h-14"></div>
+      <div className="pt-[4.5rem]" />
 
       {/* Messages container - scrollable area between fixed header and input */}
-      <div className="flex-1 overflow-y-auto p-4 bg-merlot pb-32">
+      <div className="flex-1 overflow-y-auto p-4 pt-20 bg-merlot pb-32">
         <div className="flex flex-col space-y-4">
           {messages.map((message, index) => (
             <div
