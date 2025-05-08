@@ -196,7 +196,7 @@ export async function addMessageToThread(
 // Run the assistant on a thread
 export async function runAssistantOnThread(
   threadId: string, 
-  assistantId: string = 'asst_PZYE18wO7th5Fm9JoOkLEfDJ'
+  assistantId: string = 'asst_hHy68PuBx0Z44uF9cAna4oJD'
 ) {
   const response = await proxyRequestToOpenAI(
     'POST',
