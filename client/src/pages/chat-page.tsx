@@ -55,7 +55,7 @@ export default function ChatPage() {
         {
           id: "welcome",
           role: "assistant",
-          content: ["Welcome to Layover Fuel! I'm your personal nutrition and fitness assistant. I can help you analyze your meals, suggest workouts, and provide travel-friendly fitness tips. How can I help you today?"],
+          content: ["Welcome to SomBuddy — your friendly wine-pairing guide. I can help you choose the perfect wine for your meal, dessert, mood, or setting. Want to snap a pic or just describe your dish?"],
         },
       ]);
     } catch (error) {
@@ -116,7 +116,7 @@ export default function ChatPage() {
         formattedMessages.push({
           id: "welcome",
           role: "assistant",
-          content: ["Welcome to Layover Fuel! I'm your personal nutrition and fitness assistant. I can help you analyze your meals, suggest workouts, and provide travel-friendly fitness tips. How can I help you today?"],
+          content: ["Welcome to SomBuddy — your friendly wine-pairing guide. I can help you choose the perfect wine for your meal, dessert, mood, or setting. Want to snap a pic or just describe your dish?"],
         });
       }
       
@@ -326,11 +326,11 @@ export default function ChatPage() {
   };
 
   return (
-    <div className="flex flex-col h-screen bg-black overflow-hidden">
+    <div className="flex flex-col h-screen bg-merlot text-cream overflow-hidden">
       {/* Fixed Header */}
-      <div className="flex items-center justify-between bg-black px-4 py-3 border-b border-gray-800 fixed top-0 left-0 right-0 z-20">
+      <div className="flex items-center justify-between px-4 py-3 fixed top-0 left-0 right-0 z-20 border-b border-zinc-800 bg-black/40 backdrop-blur-md">
         <div className="flex items-center space-x-2">
-          <h1 className="text-xl font-semibold text-white">Layover Fuel Assistant</h1>
+          <h1 className="text-xl font-semibold text-white">SomBuddy🍷</h1>
         </div>
         <Link href="/dashboard">
           <Button className="bg-transparent hover:bg-blue-500 text-gray-300 hover:text-white border border-gray-800 hover:border-transparent">
@@ -338,12 +338,13 @@ export default function ChatPage() {
           </Button>
         </Link>
       </div>
+
       
       {/* Spacer to account for fixed header */}
       <div className="h-14"></div>
 
       {/* Messages container - scrollable area between fixed header and input */}
-      <div className="flex-1 overflow-y-auto p-4 bg-black pb-32">
+      <div className="flex-1 overflow-y-auto p-4 bg-merlot pb-32">
         <div className="flex flex-col space-y-4">
           {messages.map((message, index) => (
             <div
@@ -392,8 +393,8 @@ export default function ChatPage() {
                   <div
                     className={`rounded-2xl p-3 ${
                       message.role === "user"
-                        ? "bg-blue-500 text-white rounded-tr-none"
-                        : "bg-gray-800 text-white rounded-tl-none"
+                      ? "bg-slate-700 text-white rounded-tr-none"
+                      : "bg-cream text-merlot rounded-tl-none"
                     }`}
                   >
                     {message.content.map((text, i) => {
@@ -456,7 +457,7 @@ export default function ChatPage() {
       </div>
 
       {/* Input area - fixed at bottom */}
-      <div className="p-4 border-t border-gray-800 bg-black fixed bottom-0 left-0 right-0 z-20">
+      <div className="p-4 border-t border-zinc-800 bg-black/40 backdrop-blur-lg fixed bottom-0 left-0 right-0 z-20">
         {/* Display images to be sent - as thumbnails */}
         {tempImages.length > 0 && (
           <div className="mb-4">
@@ -505,11 +506,11 @@ export default function ChatPage() {
             onImageSelect={handleImageSelect}
             className="text-gray-400 hover:text-gray-200 p-2"
           />
-          <div className="flex-1 bg-gray-800 rounded-2xl overflow-hidden">
+          <div className="flex-1 bg-slate-800 text-white rounded-2xl overflow-hidden border border-slate-600">
             <textarea
               ref={textareaRef}
-              className="w-full bg-gray-800 text-white border-none px-4 py-3 focus:outline-none resize-none"
-              placeholder="Message..."
+              className="w-full bg-slate-800 text-white placeholder:text-slate-400 border-none px-4 py-3 focus:outline-none resize-none"
+              placeholder="What are you eating tonight?"
               rows={1}
               value={input}
               onChange={(e) => setInput(e.target.value)}
