@@ -13,8 +13,6 @@ app.use(express.urlencoded({ extended: false, limit: '50mb' }));
 
 app.use((req, res, next) => {
   const start = Date.now();
-  const __filename = fileURLToPath(import.meta.url);
-  const __dirname = path.dirname(__filename);
 
   const path = req.path;
   let capturedJsonResponse: Record<string, any> | undefined = undefined;
