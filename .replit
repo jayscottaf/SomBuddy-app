@@ -40,3 +40,10 @@ task = "packager.installForAll"
 task = "shell.exec"
 args = "npm run dev"
 waitForPort = 5000
+
+[run.env]
+CLOUDINARY_CLOUD_NAME = "dssdnhbpk"
+CLOUDINARY_API_KEY = "125436316292647"
+CLOUDINARY_API_SECRET = "9K3iYGJLE8iP5Yy5i5yd2zcU4ZU"
+
+
