@@ -49,7 +49,7 @@ export default function ChatPage() {
       const data = await response.json();
       setThreadId(data.threadId);
       localStorage.setItem("assistantThreadId", data.threadId);
-      
+
       // Add welcome message
       setMessages([
         {
@@ -79,7 +79,7 @@ export default function ChatPage() {
         throw new Error("Failed to fetch messages");
       }
       const data = await response.json();
-      
+
       // Format messages - ensure they're in chronological order (oldest first)
       // The API returns messages in reverse chronological order (newest first)
       // so we need to reverse them to display correctly
@@ -92,7 +92,7 @@ export default function ChatPage() {
             .filter((content: any) => content.type === "text")
             .map((content: any) => content.text.value)
             .filter(Boolean);
-          
+
           // Extract all image URLs (both direct URLs and file references)
           const imageUrls = msg.content
             .filter((c: any) => c.type === "image_url" || c.type === "image_file")
@@ -102,7 +102,7 @@ export default function ChatPage() {
               return null;
             })
             .filter(Boolean);
-          
+
           return {
             id: msg.id,
             role: msg.role,
@@ -110,7 +110,7 @@ export default function ChatPage() {
             imageUrls: imageUrls.length > 0 ? imageUrls : undefined,
           };
         });
-      
+
       // Add welcome message if no messages
       if (formattedMessages.length === 0) {
         formattedMessages.push({
@@ -119,7 +119,7 @@ export default function ChatPage() {
           content: ["Welcome to SomBuddy — your friendly wine-pairing guide. I can help you choose the perfect wine for your meal, dessert, mood, or setting. Want to snap a pic or just describe your dish?"],
         });
       }
-      
+
       setMessages(formattedMessages);
     } catch (error) {
       console.error("Error fetching messages:", error);
@@ -145,18 +145,18 @@ export default function ChatPage() {
       imageDataArray?: string[];
     }) => {
       if (!threadId) throw new Error("No thread ID");
-      
+
       const response = await apiRequest("POST", "/api/assistant/message", {
         threadId,
         message,
         imageData,
         imageDataArray,
       });
-      
+
       if (!response.ok) {
         throw new Error("Failed to send message");
       }
-      
+
       return response.json();
     },
     onSuccess: (data) => {
@@ -170,7 +170,7 @@ export default function ChatPage() {
             .filter((content: any) => content.type === "text")
             .map((content: any) => content.text.value)
             .filter(Boolean);
-          
+
           // Extract all image URLs (both direct URLs and file references)
           const imageUrls = msg.content
             .filter((c: any) => c.type === "image_url" || c.type === "image_file")
@@ -180,7 +180,7 @@ export default function ChatPage() {
               return null;
             })
             .filter(Boolean);
-          
+
           return {
             id: msg.id,
             role: msg.role,
@@ -188,17 +188,17 @@ export default function ChatPage() {
             imageUrls: imageUrls.length > 0 ? imageUrls : undefined,
           };
         });
-      
+
       // Update the messages state with the processed messages from the server
       setMessages(newMessages);
     },
     onError: (error) => {
       console.error("Error sending message:", error);
-      
+
       // Try to parse the detailed error information if available
       let errorMessage = "Failed to send message. Please try again.";
       let errorTitle = "Error";
-      
+
       if (error instanceof Error) {
         // If there's a cause with structured error information
         if ('cause' in error) {
@@ -207,10 +207,10 @@ export default function ChatPage() {
             errorMessage = cause.message;
           }
         }
-        
+
         // Check for common error types in the error message
         const errorString = error.message.toLowerCase();
-        
+
         // Handle different types of errors with specific messages
         if (errorString.includes('cloud') || errorString.includes('storage')) {
           errorTitle = "Cloud Storage Error";
@@ -232,13 +232,13 @@ export default function ChatPage() {
           errorMessage = "You've made too many requests. Please wait a moment and try again.";
         }
       }
-      
+
       toast({
         title: errorTitle,
         description: errorMessage,
         variant: "destructive",
       });
-      
+
       // Remove the processing message from the UI
       setMessages(messages => messages.filter(msg => msg.id !== "processing"));
     },
@@ -247,11 +247,11 @@ export default function ChatPage() {
   // Send a message
   const sendMessage = () => {
     if (!input.trim() && tempImages.length === 0) return;
-    
+
     // Store the current images/input to use in the message
     const currentInput = input;
     const currentImages = [...tempImages];
-    
+
     // Add user message to the UI immediately
     const userMessage: Message = {
       id: Date.now().toString(),
@@ -259,23 +259,23 @@ export default function ChatPage() {
       content: currentInput.trim() ? [currentInput] : [], // Only include non-empty content
       imageUrls: currentImages.length > 0 ? currentImages : undefined,
     };
-    
+
     setMessages((prev) => [...prev, userMessage]);
-    
+
     // Add processing message
     const processingMessage: Message = {
       id: "processing",
       role: "assistant",
       content: ["Thinking..."],
     };
-    
+
     setMessages((prev) => [...prev, processingMessage]);
-    
+
     // Clear the input and images BEFORE sending the API request
     // This ensures the UI is ready for another image immediately
     setInput("");
     setTempImages([]);
-    
+
     // Send the message with all images to the API
     try {
       sendMessageMutation.mutate({
@@ -295,31 +295,31 @@ export default function ChatPage() {
   // Handle multiple image uploads
   const [tempImages, setTempImages] = useState<string[]>([]);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  
+
   // Function to automatically adjust the textarea height based on content
   const autoResizeTextarea = () => {
     const textarea = textareaRef.current;
     if (textarea) {
       // Reset height to auto to get the correct scrollHeight
       textarea.style.height = 'auto';
-      
+
       // Set the height to match the content (with a max of 150px)
       const newHeight = Math.min(textarea.scrollHeight, 150);
       textarea.style.height = `${newHeight}px`;
     }
   };
-  
+
   // Effect to resize the textarea whenever input changes
   useEffect(() => {
     autoResizeTextarea();
   }, [input]);
-  
+
   const handleImageSelect = (file: File, preview: string) => {
     // Add the new image to the array
     setTempImages(prevImages => [...prevImages, preview]);
     // No toast notification needed - the image preview is visible
   };
-  
+
   // Remove an image from the tempImages array
   const removeImage = (index: number) => {
     setTempImages(prevImages => prevImages.filter((_, i) => i !== index));
@@ -339,7 +339,7 @@ export default function ChatPage() {
         </Link>
       </div>
 
-      
+
       {/* Spacer to account for fixed header */}
       <div className="pt-[4.5rem]" />
 
@@ -388,13 +388,13 @@ export default function ChatPage() {
                     ))}
                   </div>
                 )}
-                
+
                 {((message.content.length > 0 && message.content[0]?.trim() !== "") || message.id === "processing") && (
                   <div
-                    className={`rounded-2xl p-3 ${
+                    className={`rounded-2xl p-3 inline-block ${
                       message.role === "user"
-                      ? "bg-slate-700 text-white rounded-tr-none"
-                      : "bg-cream text-merlot rounded-tl-none"
+                        ? "bg-slate-700 text-white rounded-tr-none ml-auto"
+                        : "bg-cream text-merlot rounded-tl-none"
                     }`}
                   >
                     {message.content.map((text, i) => {
@@ -403,7 +403,7 @@ export default function ChatPage() {
                                           /\d+\.\s/.test(text) || 
                                           text.includes("* ") ||
                                           text.includes("• ");
-                      
+
                       if (hasListItems) {
                         // Split by common list separators
                         const lines = text.split(/\n/);
@@ -415,7 +415,7 @@ export default function ChatPage() {
                                               /^\d+\.\s/.test(line.trim()) ||
                                               line.trim().startsWith("* ") ||
                                               line.trim().startsWith("• ");
-                              
+
                               if (isListItem) {
                                 return (
                                   <div key={lineIndex} className="flex mb-1">
@@ -439,7 +439,7 @@ export default function ChatPage() {
                         );
                       }
                     })}
-                    
+
                     {message.id === "processing" && (
                       <div className="flex items-center mt-1">
                         <div className="w-2 h-2 bg-gray-400 rounded-full animate-pulse mr-1"></div>
