@@ -3,12 +3,6 @@ run = "npm run dev"
 
 [deployment]
 deploymentTarget = "cloudrun"
-run = ["sh", "-c", "NODE_ENV=production npm run start"]
-build = ["sh", "-c", "npm run build"]
-
-[[ports]]
-localPort = 5000
-externalPort = 80
 
 
 
