@@ -9,7 +9,7 @@ const openai = new OpenAI({
 });
 
 // The assistant ID for Layover Fuel
-const ASSISTANT_ID = "YOUR_NEW_ASSISTANT_ID";
+const ASSISTANT_ID = "asst_hHy68PuBx0Z44uF9cAna4oJD";
 
 // Interface for thread messages
 export interface Message {
