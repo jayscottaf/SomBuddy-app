@@ -159,12 +159,40 @@ app.use((req, res, next) => {
   } else {
     serveStatic(app);
     
-    // Add a catch-all route for the frontend to support client-side routing in production
+    // Add a more robust catch-all route for the frontend to support client-side routing in production
     // This ensures routes like /chat and /dashboard work without server-side route definitions
     app.get('*', (req, res) => {
       // Skip API routes - those should 404 if not defined
       if (!req.path.startsWith('/api/')) {
-        res.sendFile('index.html', { root: './dist/public' });
+        // Log the request being handled by catch-all
+        console.log(`Catch-all route handling: ${req.path}`);
+        
+        // Try multiple possible index.html locations (based on common Replit deployment paths)
+        const possiblePaths = [
+          { path: './dist/public/index.html', root: './dist/public' },
+          { path: '../dist/public/index.html', root: '../dist/public' },
+          { path: './public/index.html', root: './public' }
+        ];
+        
+        // Try each path
+        for (const { path: indexPath, root } of possiblePaths) {
+          if (fs.existsSync(indexPath)) {
+            console.log(`Found index.html at ${indexPath}, serving from ${root}`);
+            return res.sendFile('index.html', { root });
+          }
+        }
+        
+        // If all paths fail, send a more helpful error
+        res.status(404).send(`
+          <html>
+            <head><title>SomBuddy - Page Not Found</title></head>
+            <body>
+              <h1>Error: Frontend not found</h1>
+              <p>Cannot find index.html in any of the expected locations.</p>
+              <p>Try visiting <a href="/debug-build">/debug-build</a> for more information.</p>
+            </body>
+          </html>
+        `);
       } else {
         res.status(404).json({ message: 'API endpoint not found' });
       }
