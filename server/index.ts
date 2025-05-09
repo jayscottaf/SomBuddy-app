@@ -88,25 +88,25 @@ app.use((req, res, next) => {
     `);
   });
 
+  // HEAD method handler for root path 
+  // This addresses: "Add a HEAD method handler for the root path to respond to health checks without requiring expensive operations"
+  app.head('/', (_req, res) => {
+    // Always return a successful status for HEAD requests (used by health checks)
+    res.status(200).end();
+  });
+
   // Root path with better error handling
   app.get('/', async (req, res, next) => {
     const isProduction = app.get('env') === 'production';
     const userAgent = req.headers['user-agent'] || 'none';
     const isKubeProbe = userAgent.includes('kube-probe');
     
-    // If it's a kubernetes probe, return health status
+    // If it's a kubernetes probe, ALWAYS return healthy status (per Replit's suggestion)
+    // This addresses: "Modify the root endpoint to respond with a 200 status code immediately for Kubernetes health probes without checking database"
     if (isKubeProbe) {
-      try {
-        // Need to await the checkConnection call since it's async
-        await storage.checkConnection();
-        return res.status(200).json({ status: 'healthy', source: 'root-handler-probe' });
-      } catch (error: any) {
-        return res.status(503).json({ 
-          status: 'unhealthy', 
-          source: 'root-handler-probe',
-          error: error.message || 'Unknown error'
-        });
-      }
+      // Skip database connection check entirely
+      console.log("Kubernetes probe detected, returning immediate 200 status");
+      return res.status(200).json({ status: 'healthy', immediate: true });
     }
 
     // In production and not a kube probe, try to serve the app
@@ -139,18 +139,11 @@ app.use((req, res, next) => {
     next();
   });
   
-  // Separate health check endpoint for Kubernetes probes
-  app.get('/k8s-health', async (req, res) => {
-    try {
-      await storage.checkConnection();
-      res.status(200).json({ status: 'healthy', source: 'k8s-health' });
-    } catch (error: any) {
-      res.status(503).json({ 
-        status: 'unhealthy', 
-        source: 'k8s-health', 
-        error: error.message || 'Unknown error' 
-      });
-    }
+  // Simplified health check endpoint for Kubernetes probes
+  // This addresses: "Simplify the /k8s-health endpoint to always return a 200 status code without checking the database connection"
+  app.get('/k8s-health', (_req, res) => {
+    // Always return a 200 OK status without checking the database
+    res.status(200).json({ status: 'healthy', immediate: true });
   });
 
   // Add minimal health check endpoint that always returns 200
