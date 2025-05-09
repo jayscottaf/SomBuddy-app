@@ -54,9 +54,9 @@ app.use((req, res, next) => {
       try {
         // Check database connectivity
         await storage.checkConnection();
-        
+
         // Add any other critical service checks here
-        
+
         res.status(200).json({
           status: 'healthy',
           timestamp: new Date().toISOString()
