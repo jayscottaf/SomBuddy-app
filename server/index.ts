@@ -48,28 +48,9 @@ app.use((req, res, next) => {
     throw err;
   });
 
-  // Add robust health check endpoint that checks critical services
-  app.get('/', async (req, res, next) => {
-    if (req.headers['user-agent']?.includes('kube-probe')) {
-      try {
-        // Check database connectivity
-        await storage.checkConnection();
-
-        // Add any other critical service checks here
-
-        res.status(200).json({
-          status: 'healthy',
-          timestamp: new Date().toISOString()
-        });
-      } catch (error) {
-        res.status(503).json({
-          status: 'unhealthy',
-          error: 'Service unavailable'
-        });
-      }
-    } else {
-      next();
-    }
+  // Add minimal health check endpoint that always returns 200
+  app.get("/health", (_req: Request, res: Response) => {
+    res.status(200).json({ status: "healthy", timestamp: new Date().toISOString() });
   });
 
   // importantly only setup vite in development and after
