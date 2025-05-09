@@ -48,6 +48,27 @@ app.use((req, res, next) => {
     res.status(status).json({ message });
     throw err;
   });
+  
+  // HEAD method handler for root path
+  app.head('/', (_req, res) => {
+    console.log('HEAD request to root path - returning 200 OK');
+    // Always return a successful status for HEAD requests (used by health checks)
+    res.status(200).end();
+  });
+  
+  // Special handler for GET requests to root from Kubernetes probes
+  app.get('/', (req, res, next) => {
+    const userAgent = req.headers['user-agent'] || '';
+    
+    // Check if request is from a Kubernetes probe
+    if (userAgent.includes('kube-probe')) {
+      console.log('Kubernetes probe GET request detected - returning immediate success');
+      return res.status(200).json({ status: 'healthy', probe: true });
+    }
+    
+    // Otherwise pass to next handler
+    next();
+  });
 
   // importantly only setup vite in development and after
   // setting up all the other routes so the catch-all route
