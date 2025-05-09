@@ -12,9 +12,6 @@ import connectPg from "connect-pg-simple";
 import { pool } from "./db";
 
 export interface IStorage {
-  // Database connection check
-  checkConnection(): Promise<boolean>;
-  
   // User methods
   getUser(id: number): Promise<User | undefined>;
   getUserByEmail(email: string): Promise<User | undefined>;
@@ -60,18 +57,6 @@ export class DatabaseStorage implements IStorage {
       pool,
       createTableIfMissing: true
     });
-  }
-  
-  // Database connection check
-  async checkConnection(): Promise<boolean> {
-    try {
-      // Run a simple query to check the database connection
-      await db.execute(sql`SELECT 1`);
-      return true;
-    } catch (error) {
-      console.error('Database connection check failed:', error);
-      return false;
-    }
   }
 
   // User methods
