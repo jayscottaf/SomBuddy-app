@@ -1,0 +1,5 @@
+[deployment]
+run = "node dist/index.js"
+build = ["npm install", "npm run build"]
+deploymentTarget = "cloudrun"
+ignorePorts = false
