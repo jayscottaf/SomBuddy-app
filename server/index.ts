@@ -48,6 +48,23 @@ app.use((req, res, next) => {
     throw err;
   });
 
+  // Health check endpoint that also serves frontend
+  app.get('/', async (req, res, next) => {
+    if (req.headers['user-agent']?.includes('kube-probe')) {
+      try {
+        await storage.checkConnection();
+        res.status(200).json({ status: 'healthy' });
+      } catch (error) {
+        res.status(503).json({ status: 'unhealthy' });
+      }
+    } else if (app.get('env') === 'production') {
+      // In production, serve the index.html
+      res.sendFile('index.html', { root: './dist/client' });
+    } else {
+      next();
+    }
+  });
+
   // Add minimal health check endpoint that always returns 200
   app.get("/health", (_req: Request, res: Response) => {
     res.status(200).json({ status: "healthy", timestamp: new Date().toISOString() });
