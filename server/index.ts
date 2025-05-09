@@ -1,6 +1,7 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
+import * as fs from "fs";
 
 const app = express();
 // Increase JSON payload size limit for image uploads
@@ -54,6 +55,37 @@ app.use((req, res, next) => {
   if (app.get("env") === "development") {
     await setupVite(app, server);
   } else {
+    // Add special handlers for main.tsx and other client assets that might be requested incorrectly
+    app.get('/src/main.tsx', (req, res) => {
+      console.log('Redirecting /src/main.tsx request to proper asset path');
+      res.redirect('/assets/index.js');
+    });
+    
+    // Handle other assets that might be requested with incorrect paths
+    app.get('/src/*', (req, res, next) => {
+      const requestedPath = req.path;
+      console.log(`Received request for ${requestedPath}, checking for alternative locations`);
+      
+      // Try to map to correct asset paths
+      const assetPath = requestedPath.replace('/src/', '/assets/');
+      const possiblePaths = [
+        { check: `./dist/public${assetPath}`, serve: assetPath },
+        { check: `./dist/public/assets/index.js`, serve: '/assets/index.js' }
+      ];
+      
+      // Check if any alternative path exists
+      for (const { check, serve } of possiblePaths) {
+        if (fs.existsSync(check)) {
+          console.log(`Redirecting ${requestedPath} to ${serve}`);
+          return res.redirect(serve);
+        }
+      }
+      
+      // If we can't find an alternative, log the error and continue to next handler
+      console.log(`No alternative found for ${requestedPath}`);
+      next();
+    });
+    
     serveStatic(app);
   }
 
