@@ -48,6 +48,15 @@ app.use((req, res, next) => {
     throw err;
   });
 
+  // Add health check endpoint that responds quickly for k8s probes
+  app.get('/', (req, res, next) => {
+    if (req.headers['user-agent']?.includes('kube-probe')) {
+      res.status(200).send('OK');
+    } else {
+      next();
+    }
+  });
+
   // importantly only setup vite in development and after
   // setting up all the other routes so the catch-all route
   // doesn't interfere with the other routes
