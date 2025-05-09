@@ -48,10 +48,25 @@ app.use((req, res, next) => {
     throw err;
   });
 
-  // Add health check endpoint that responds quickly for k8s probes
-  app.get('/', (req, res, next) => {
+  // Add robust health check endpoint that checks critical services
+  app.get('/', async (req, res, next) => {
     if (req.headers['user-agent']?.includes('kube-probe')) {
-      res.status(200).send('OK');
+      try {
+        // Check database connectivity
+        await storage.checkConnection();
+        
+        // Add any other critical service checks here
+        
+        res.status(200).json({
+          status: 'healthy',
+          timestamp: new Date().toISOString()
+        });
+      } catch (error) {
+        res.status(503).json({
+          status: 'unhealthy',
+          error: 'Service unavailable'
+        });
+      }
     } else {
       next();
     }
