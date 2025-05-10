@@ -387,7 +387,7 @@ export default function ChatPage() {
 
                 {((message.content.length > 0 && message.content[0]?.trim() !== "") || message.id === "processing") && (
                   <div
-                    className={`rounded-xl p-3 inline-block ${
+                    className={`rounded-xl py-1.5 px-3 inline-block ${
                       message.role === "user"
                         ? "bg-gold text-black rounded-tr-none ml-auto"
                         : "bg-[#3f1b19] text-[#ddcaa1] rounded-tl-none border border-gold/30"
@@ -436,7 +436,7 @@ export default function ChatPage() {
                           <code>{text}</code>
                         </pre>
                       ) : (
-                        <p key={i} className="mb-2 leading-relaxed whitespace-pre-wrap">
+                        <p key={i} className="mb-1 leading-relaxed whitespace-pre-wrap">
                           {text}
                         </p>
                       );
