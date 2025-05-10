@@ -532,7 +532,7 @@ export default function ChatPage() {
           <Button
             size="icon"
             variant="ghost"
-            className="h-10 w-10 rounded-full bg-blue-500 text-white hover:bg-blue-600"
+            className="h-10 w-10 rounded-full bg-gold text-black hover:bg-gold/90"
             onClick={sendMessage}
             disabled={sendMessageMutation.isPending || isLoading || (!input.trim() && tempImages.length === 0)}
           >
