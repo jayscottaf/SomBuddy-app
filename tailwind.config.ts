@@ -6,8 +6,8 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        heading: ["Montserrat", "system-ui", "sans-serif"],
-        sans: ["Inter", "system-ui", "sans-serif"],
+        heading: ["Georgia", "Times New Roman", "serif"],
+        sans: ["Georgia", "Times New Roman", "serif"],
       },
       borderRadius: {
         lg: "var(--radius)",
