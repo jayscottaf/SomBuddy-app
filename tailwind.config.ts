@@ -16,7 +16,7 @@ export default {
       },
       colors: {
         merlot: '#6B2D26',
-        cream: '#F9F5EF',
+        cream: '#F5E8C7',
         background: "hsl(var(--background))",
         foreground: "hsl(var(--foreground))",
         card: {
