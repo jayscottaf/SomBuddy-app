@@ -6,7 +6,7 @@ localPort = 5000
 externalPort = 80
 
 [deployment]
-run = "node dist/index.js"
+run = "NODE_ENV=production node dist/index.js"
 build = ["npm install", "npm run build"]
 deploymentTarget = "cloudrun"
 ignorePorts = false
