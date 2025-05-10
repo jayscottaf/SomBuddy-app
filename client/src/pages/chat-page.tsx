@@ -1,7 +1,4 @@
-The change modifies the styling of the reply bubbles to have a dynamic width based on content.
-```
 
-```replit_final_file
 import { useState, useEffect, useRef } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
@@ -15,7 +12,7 @@ interface Message {
   id: string;
   role: "user" | "assistant";
   content: string[];
-  imageUrls?: string[]; // Changed to array of image URLs
+  imageUrls?: string[];
 }
 
 export default function ChatPage() {
@@ -523,15 +520,12 @@ export default function ChatPage() {
                 }
               }}
               style={{ 
-                overflowY: 'hidden', // Changed from 'auto' for better auto-resizing
+                overflowY: 'hidden',
                 minHeight: '40px',
               }}
-              // Standard spelling attributes
               spellCheck="true"
-              // iOS/Safari specific
               autoCorrect="on"
               autoCapitalize="sentences"
-              // Chrome-specific attributes
               data-gramm="true"
               data-gramm_editor="true"
               data-enable-grammarly="true"
