@@ -507,7 +507,7 @@ export default function ChatPage() {
         <div className="flex items-end space-x-2">
           <ImageUpload
             onImageSelect={handleImageSelect}
-            className="text-gold hover:text-gold/80 p-2"
+            className="text-gold hover:text-gold/80 p-2 self-center"
           />
           <div className="flex-1 bg-[#3f1b19] text-[#ddc393] rounded-2xl overflow-hidden border border-gold/30">
             <textarea
