@@ -415,10 +415,10 @@ export default function ChatPage() {
                               if (isListItem) {
                                 return (
                                   <div key={lineIndex} className="flex mb-1">
-                                    <div className="mr-2 flex-shrink-0">
+                                    <div className="mr-3 flex-shrink-0 text-gold">
                                       {line.trim().startsWith("- ") || line.trim().startsWith("* ") || line.trim().startsWith("• ") ? "•" : line.trim().match(/^\d+\./)?.[0]}
                                     </div>
-                                    <div>{line.replace(/^-\s|\*\s|•\s|\d+\.\s/, "")}</div>
+                                    <div className="flex-1">{line.replace(/^-\s|\*\s|•\s|\d+\.\s/, "")}</div>
                                   </div>
                                 );
                               } else {
@@ -428,11 +428,18 @@ export default function ChatPage() {
                           </div>
                         );
                       } else {
-                        return (
-                          <p key={i} className="mb-1">
-                            {text}
-                          </p>
-                        );
+                        // Check if text appears to be code (has indentation or common syntax)
+                      const isCode = text.includes('    ') || /[{};()=]/.test(text);
+                      
+                      return isCode ? (
+                        <pre key={i} className="bg-black/20 p-2 rounded-md font-mono text-sm overflow-x-auto mb-2">
+                          <code>{text}</code>
+                        </pre>
+                      ) : (
+                        <p key={i} className="mb-2 leading-relaxed whitespace-pre-wrap">
+                          {text}
+                        </p>
+                      );
                       }
                     })}
 
