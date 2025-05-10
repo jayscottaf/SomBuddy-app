@@ -340,7 +340,7 @@ export default function ChatPage() {
       </div>
 
       {/* Messages container - scrollable area between fixed header and input */}
-      <div className="flex-1 overflow-y-auto p-4 bg-merlot pb-40 pt-20">
+      <div className="flex-1 overflow-y-auto p-4 bg-merlot pb-20 pt-20">
         <div className="flex flex-col space-y-4">
           {messages.map((message, index) => (
             <div
