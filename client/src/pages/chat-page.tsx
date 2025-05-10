@@ -340,7 +340,7 @@ export default function ChatPage() {
       </div>
 
       {/* Messages container - scrollable area between fixed header and input */}
-      <div className="flex-1 overflow-y-auto p-4 bg-merlot pb-32 pt-20">
+      <div className="flex-1 overflow-y-auto p-4 bg-merlot pb-20 pt-20">
         <div className="flex flex-col space-y-4">
           {messages.map((message, index) => (
             <div
@@ -430,7 +430,7 @@ export default function ChatPage() {
                       } else {
                         // Check if text appears to be code (has indentation or common syntax)
                       const isCode = text.includes('    ') || /[{};()=]/.test(text);
-                      
+
                       return isCode ? (
                         <pre key={i} className="bg-black/20 p-2 rounded-md font-mono text-sm overflow-x-auto mb-2">
                           <code>{text}</code>
