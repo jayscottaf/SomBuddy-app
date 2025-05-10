@@ -513,12 +513,16 @@ export default function ChatPage() {
             <textarea
               ref={textareaRef}
               className="w-full bg-[#3f1b19] text-[#ddc393] placeholder:text-[#ddc393]/70 border-none px-4 py-3 focus:outline-none resize-none"
-              placeholder="What are you eating tonight? 🍽️"
+              placeholder="What are you eating tonight?"
               rows={1}
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              data-gramm="false"
-              spellCheck="false"
+              spellCheck="true"
+              autoCorrect="on"
+              autoCapitalize="sentences"
+              data-gramm="true"
+              data-gramm_editor="true"
+              data-enable-grammarly="true"
               disabled={sendMessageMutation.isPending || isLoading}
               onKeyDown={(e) => {
                 if (e.key === "Enter" && !e.shiftKey) {
@@ -530,12 +534,6 @@ export default function ChatPage() {
                 overflowY: 'hidden',
                 minHeight: '40px',
               }}
-              spellCheck="true"
-              autoCorrect="on"
-              autoCapitalize="sentences"
-              data-gramm="true"
-              data-gramm_editor="true"
-              data-enable-grammarly="true"
             />
           </div>
           <Button
