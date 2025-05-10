@@ -509,7 +509,7 @@ export default function ChatPage() {
             onImageSelect={handleImageSelect}
             className="text-gold hover:text-gold/80 p-2 self-center"
           />
-          <div className="flex-1 bg-[#3f1b19] text-[#ddc393] rounded-2xl overflow-hidden border border-gold/30">
+          <div className="flex-1 bg-[#3f1b19] text-[#ddc393] rounded-3xl overflow-hidden border border-gold/30">
             <textarea
               ref={textareaRef}
               className="w-full bg-[#3f1b19] text-[#ddc393] placeholder:text-[#ddc393]/70 border-none px-4 py-3 focus:outline-none resize-none"
