@@ -390,7 +390,7 @@ export default function ChatPage() {
                     className={`rounded-2xl p-3 inline-block ${
                       message.role === "user"
                         ? "bg-gold/90 text-merlot rounded-tr-none ml-auto"
-                        : "bg-[#582121] text-cream rounded-tl-none"
+                        : "bg-[#582121] text-cream rounded-tl-none border border-gold/30"
                     }`}
                   >
                     {message.content.map((text, i) => {
