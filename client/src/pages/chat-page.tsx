@@ -333,7 +333,7 @@ export default function ChatPage() {
           <h1 className="text-3xl font-serif text-gold">SomBuddy</h1>
         </div>
         <Link href="/dashboard">
-          <Button className="bg-gold/90 hover:bg-gold text-merlot font-medium border-none">
+          <Button className="bg-gold hover:bg-gold/90 text-black font-medium border-none">
             Dashboard
           </Button>
         </Link>
@@ -389,8 +389,8 @@ export default function ChatPage() {
                   <div
                     className={`rounded-2xl p-3 inline-block ${
                       message.role === "user"
-                        ? "bg-gold/90 text-merlot rounded-tr-none ml-auto"
-                        : "bg-[#582121] text-cream rounded-tl-none border border-gold/30"
+                        ? "bg-gold text-black rounded-tr-none ml-auto"
+                        : "bg-[#3f1b19] text-[#ddcaa1] rounded-tl-none border border-gold/30"
                     }`}
                   >
                     {message.content.map((text, i) => {
@@ -500,12 +500,12 @@ export default function ChatPage() {
         <div className="flex items-end space-x-2">
           <ImageUpload
             onImageSelect={handleImageSelect}
-            className="text-gray-400 hover:text-gray-200 p-2"
+            className="text-[#ddc393] hover:text-gray-200 p-2"
           />
-          <div className="flex-1 bg-[#582121] text-cream rounded-2xl overflow-hidden border border-gold/30">
+          <div className="flex-1 bg-[#3f1b19] text-[#ddc393] rounded-2xl overflow-hidden border border-gold/30">
             <textarea
               ref={textareaRef}
-              className="w-full bg-[#582121] text-cream placeholder:text-cream/60 border-none px-4 py-3 focus:outline-none resize-none"
+              className="w-full bg-[#3f1b19] text-[#ddc393] placeholder:text-[#ddc393]/70 border-none px-4 py-3 focus:outline-none resize-none"
               placeholder="What are you eating tonight?"
               rows={1}
               value={input}
