@@ -1,3 +1,7 @@
+The change modifies the styling of the reply bubbles to have a dynamic width based on content.
+```
+
+```replit_final_file
 import { useState, useEffect, useRef } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
@@ -350,7 +354,7 @@ export default function ChatPage() {
                 message.role === "user" ? "justify-end" : "justify-start"
               }`}
             >
-              <div className="flex flex-col space-y-2 max-w-[75%] w-full">
+              <div className={`flex flex-col space-y-2 ${message.role === "user" ? "max-w-[75%]" : "max-w-fit"}`}>
                 {message.imageUrls && message.imageUrls.length > 0 && (
                   <div className={`flex flex-wrap gap-1 max-w-[90%] ${
                       message.role === "user" ? "ml-auto justify-end" : "mr-auto justify-start"
