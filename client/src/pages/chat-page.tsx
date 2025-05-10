@@ -436,7 +436,7 @@ export default function ChatPage() {
                           <code>{text}</code>
                         </pre>
                       ) : (
-                        <p key={i} className="mb-1 leading-relaxed whitespace-pre-wrap">
+                        <p key={i} className="mb-.5 leading-relaxed whitespace-pre-wrap">
                           {text}
                         </p>
                       );
