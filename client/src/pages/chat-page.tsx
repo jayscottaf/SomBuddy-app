@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
@@ -390,8 +389,8 @@ export default function ChatPage() {
                   <div
                     className={`rounded-2xl p-3 inline-block ${
                       message.role === "user"
-                        ? "bg-[#582121] text-cream rounded-tr-none ml-auto"
-                        : "bg-gold/90 text-merlot rounded-tl-none"
+                        ? "bg-gold/90 text-merlot rounded-tr-none ml-auto"
+                        : "bg-[#582121] text-cream rounded-tl-none"
                     }`}
                   >
                     {message.content.map((text, i) => {
