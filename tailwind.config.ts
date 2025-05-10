@@ -11,7 +11,7 @@ export default {
         sm: "calc(var(--radius) - 4px)",
       },
       colors: {
-        merlot: '#5C1A1B',
+        merlot: '#6B2D26',
         cream: '#F9F5EF',
         background: "hsl(var(--background))",
         foreground: "hsl(var(--foreground))",

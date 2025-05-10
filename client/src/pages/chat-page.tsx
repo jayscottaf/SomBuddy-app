@@ -351,7 +351,7 @@ export default function ChatPage() {
                 message.role === "user" ? "justify-end" : "justify-start"
               }`}
             >
-              <div className={`flex flex-col space-y-2 ${message.role === "user" ? "max-w-[75%]" : "max-w-fit"}`}>
+              <div className={`flex flex-col space-y-2 ${message.role === "user" ? "max-w-[75%]" : "max-w-[85%]"}`}>
                 {message.imageUrls && message.imageUrls.length > 0 && (
                   <div className={`flex flex-wrap gap-1 max-w-[90%] ${
                       message.role === "user" ? "ml-auto justify-end" : "mr-auto justify-start"
