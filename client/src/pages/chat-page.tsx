@@ -331,10 +331,10 @@ export default function ChatPage() {
       {/* Fixed Header */}
       <div className="flex items-center justify-between px-4 py-3 fixed top-0 left-0 right-0 z-10 border-b border-zinc-800 bg-black/40 backdrop-blur-md">
         <div className="flex items-center space-x-2">
-          <h1 className="text-3xl font-serif text-[#d4b26a]">SomBuddy</h1>
+          <h1 className="text-3xl font-serif text-gold">SomBuddy</h1>
         </div>
         <Link href="/dashboard">
-          <Button className="bg-transparent hover:bg-blue-500 text-creme-300 hover:text-white border border-gray-800 hover:border-transparent">
+          <Button className="bg-gold/90 hover:bg-gold text-merlot font-medium border-none">
             Dashboard
           </Button>
         </Link>
@@ -390,8 +390,8 @@ export default function ChatPage() {
                   <div
                     className={`rounded-2xl p-3 inline-block ${
                       message.role === "user"
-                        ? "bg-slate-700 text-white rounded-tr-none ml-auto"
-                        : "bg-cream text-merlot rounded-tl-none"
+                        ? "bg-[#582121] text-cream rounded-tr-none ml-auto"
+                        : "bg-gold/90 text-merlot rounded-tl-none"
                     }`}
                   >
                     {message.content.map((text, i) => {
@@ -503,10 +503,10 @@ export default function ChatPage() {
             onImageSelect={handleImageSelect}
             className="text-gray-400 hover:text-gray-200 p-2"
           />
-          <div className="flex-1 bg-slate-800 text-white rounded-2xl overflow-hidden border border-slate-600">
+          <div className="flex-1 bg-[#582121] text-cream rounded-2xl overflow-hidden border border-gold/30">
             <textarea
               ref={textareaRef}
-              className="w-full bg-slate-800 text-white placeholder:text-slate-400 border-none px-4 py-3 focus:outline-none resize-none"
+              className="w-full bg-[#582121] text-cream placeholder:text-cream/60 border-none px-4 py-3 focus:outline-none resize-none"
               placeholder="What are you eating tonight?"
               rows={1}
               value={input}
