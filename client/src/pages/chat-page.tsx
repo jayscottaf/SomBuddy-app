@@ -340,7 +340,7 @@ export default function ChatPage() {
       </div>
 
       {/* Messages container - scrollable area between fixed header and input */}
-      <div className="flex-1 overflow-y-auto p-4 bg-merlot pb-32 pt-20">
+      <div className="flex-1 overflow-y-auto p-4 bg-merlot pb-24 pt-20">
         <div className="flex flex-col space-y-4">
           {messages.map((message, index) => (
             <div
@@ -460,7 +460,7 @@ export default function ChatPage() {
       </div>
 
       {/* Input area - fixed at bottom */}
-      <div className="p-4 border-t border-zinc-800 bg-black/40 backdrop-blur-lg fixed bottom-0 left-0 right-0 z-20">
+      <div className="p-3 border-t border-zinc-800 bg-black/40 backdrop-blur-lg fixed bottom-0 left-0 right-0 z-20">
         {/* Display images to be sent - as thumbnails */}
         {tempImages.length > 0 && (
           <div className="mb-4">
