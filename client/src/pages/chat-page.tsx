@@ -331,15 +331,14 @@ export default function ChatPage() {
       {/* Fixed Header */}
       <div className="flex items-center justify-between px-4 py-3 fixed top-0 left-0 right-0 z-10 border-b border-zinc-800 bg-black/40 backdrop-blur-md">
         <div className="flex items-center space-x-2">
-          <h1 className="text-xl font-bold text-cream">SomBuddy🍷</h1>
+          <h1 className="text-3xl font-serif text-[#d4b26a]">SomBuddy</h1>
         </div>
         <Link href="/dashboard">
-          <Button className="bg-transparent hover:bg-blue-500 text-gray-300 hover:text-white border border-gray-800 hover:border-transparent">
+          <Button className="bg-transparent hover:bg-blue-500 text-creme-300 hover:text-white border border-gray-800 hover:border-transparent">
             Dashboard
           </Button>
         </Link>
       </div>
-
 
       {/* Messages container - scrollable area between fixed header and input */}
       <div className="flex-1 overflow-y-auto p-4 bg-merlot pb-32 pt-20">
