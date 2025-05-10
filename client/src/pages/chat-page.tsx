@@ -349,7 +349,7 @@ export default function ChatPage() {
                 message.role === "user" ? "justify-end" : "justify-start"
               }`}
             >
-              <div className={`flex flex-col space-y-2 ${message.role === "user" ? "max-w-[75%]" : "max-w-[85%]"}`}>
+              <div className={`flex flex-col space-y-1 ${message.role === "user" ? "max-w-[75%]" : "max-w-[85%] sm:max-w-[75%]"}`}>
                 {message.imageUrls && message.imageUrls.length > 0 && (
                   <div className={`flex flex-wrap gap-1 max-w-[90%] ${
                       message.role === "user" ? "ml-auto justify-end" : "mr-auto justify-start"
@@ -429,14 +429,40 @@ export default function ChatPage() {
                         );
                       } else {
                         // Check if text appears to be code (has indentation or common syntax)
-                      const isCode = text.includes('    ') || /[{};()=]/.test(text);
-                      
-                      return isCode ? (
-                        <pre key={i} className="bg-black/20 p-2 rounded-md font-mono text-sm overflow-x-auto mb-2">
-                          <code>{text}</code>
-                        </pre>
-                      ) : (
-                        <p key={i} className="mb-2 leading-relaxed whitespace-pre-wrap">
+                      // Check for wine sections and format accordingly
+                      if (text.includes('🍷') || text.includes('🥂') || text.includes('🚫')) {
+                        // Handle section headers
+                        if (text.startsWith('🍷') || text.startsWith('🥂') || text.startsWith('🚫')) {
+                          return (
+                            <h3 key={i} className="font-semibold text-[#ddc393] mt-4 mb-2">
+                              {text}
+                            </h3>
+                          );
+                        }
+                      }
+
+                      // Handle wine lists with proper icons
+                      if (text.trim().match(/^[A-Z][^:]+:/)) {
+                        const [wineName, description] = text.split(':').map(s => s.trim());
+                        const isRed = wineName.toLowerCase().includes('red') || 
+                                    wineName.toLowerCase().includes('cabernet') || 
+                                    wineName.toLowerCase().includes('syrah');
+                        
+                        return (
+                          <div key={i} className="mb-3">
+                            <p className="font-medium">
+                              {isRed ? '🍷' : '🥂'} {wineName}
+                            </p>
+                            <p className="text-[#ddc393]/80 ml-6 mt-1">
+                              {description}
+                            </p>
+                          </div>
+                        );
+                      }
+
+                      // Regular paragraphs
+                      return (
+                        <p key={i} className="mb-3 leading-relaxed whitespace-pre-wrap">
                           {text}
                         </p>
                       );
