@@ -20,6 +20,8 @@ export function log(message: string, source = "express") {
 }
 
 export async function setupVite(app: Express, server: Server) {
+  if (process.env.NODE_ENV !== "development") return;
+
   const serverOptions = {
     middlewareMode: true,
     hmr: { server },
@@ -41,9 +43,9 @@ export async function setupVite(app: Express, server: Server) {
   });
 
   app.use(vite.middlewares);
+
   app.use("*", async (req, res, next) => {
     const url = req.originalUrl;
-
     try {
       const clientTemplate = path.resolve(
         import.meta.dirname,
@@ -51,8 +53,6 @@ export async function setupVite(app: Express, server: Server) {
         "client",
         "index.html",
       );
-
-      // always reload the index.html file from disk incase it changes
       let template = await fs.promises.readFile(clientTemplate, "utf-8");
       template = template.replace(
         `src="/src/main.tsx"`,

@@ -11,6 +11,10 @@ build = ["npm install", "npm run build"]
 deploymentTarget = "cloudrun"
 ignorePorts = false
 
+[nix]
+envVars = [
+  { name = "NODE_ENV", value = "production" }
+]
 
 
 
