@@ -330,7 +330,8 @@ export default function ChatPage() {
   return (
     <div className="flex flex-col h-screen bg-merlot text-cream overflow-hidden">
       {/* Fixed Header */}
-      <div className="flex items-center justify-between px-4 py-3 fixed top-0 left-0 right-0 z-10 border-b border-zinc-800 bg-black/15 backdrop-blur-md">
+      <div className="flex items-center justify-between px-4 py-3 fixed top-0 left-0 right-0 z-10 border-b border-zinc-800 bg-black/15 backdrop-blur-md" 
+           style={{ paddingTop: 'max(12px, env(safe-area-inset-top))' }}>
         <div className="flex items-center space-x-2">
           <h1 className="text-3xl font-serif text-gold">SomBuddy</h1>
         </div>
@@ -342,7 +343,8 @@ export default function ChatPage() {
       </div>
 
       {/* Messages container - scrollable area between fixed header and input */}
-      <div className="flex-1 overflow-y-auto p-4 bg-black pt-20 pb-40">
+      <div className="flex-1 overflow-y-auto p-4 bg-black pb-40" 
+           style={{ paddingTop: 'max(80px, calc(env(safe-area-inset-top) + 68px))' }}>
         <div className="flex flex-col space-y-4">
           {messages.map((message, index) => (
             <div
