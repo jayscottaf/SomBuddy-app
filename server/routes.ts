@@ -571,26 +571,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Message or at least one image is required" });
       }
       
-      // Process and validate all image data
+      // Process and validate all image data only if images exist
       const validatedImages: string[] = [];
-      for (const img of images) {
-        try {
-          if (!img) continue;
-          
-          const imageSizeKB = Math.round(img.length / 1024);
-          console.log(`Processing image of approximately ${imageSizeKB}KB`);
-          
-          // Check if image data is too large (OpenAI limit is ~20MB, but we'll be more conservative)
-          if (imageSizeKB > 5000) { // 5MB limit
-            return res.status(413).json({ 
-              message: "Image is too large. Please use a smaller image (maximum 5MB)." 
-            });
+      if (images.length > 0) {
+        for (const img of images) {
+          try {
+            if (!img) continue;
+            
+            const imageSizeKB = Math.round(img.length / 1024);
+            console.log(`Processing image of approximately ${imageSizeKB}KB`);
+            
+            // Check if image data is too large (OpenAI limit is ~20MB, but we'll be more conservative)
+            if (imageSizeKB > 5000) { // 5MB limit
+              return res.status(413).json({ 
+                message: "Image is too large. Please use a smaller image (maximum 5MB)." 
+              });
+            }
+            
+            validatedImages.push(img);
+          } catch (imgError) {
+            console.error("Error processing image data:", imgError);
+            // Continue with other images rather than failing completely
           }
-          
-          validatedImages.push(img);
-        } catch (imgError) {
-          console.error("Error processing image data:", imgError);
-          // Continue with other images rather than failing completely
         }
       }
       
@@ -599,34 +601,60 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log(`Adding message to thread ${threadId}`);
         
         let finalMessage = message || "";
+        let imageContext = null;
         
         // If we have images, detect their types and store context for the assistant
         if (validatedImages.length > 0) {
           console.log(`Processing ${validatedImages.length} images for intelligent analysis`);
           
-          // For now, we'll handle the first image for type detection
-          // Upload the first image to get a URL for analysis
-          const { uploadImageToCloudinary } = await import("./services/cloudinary-service");
-          const firstImageUrl = await uploadImageToCloudinary(validatedImages[0]);
-          
-          // Detect the image type
-          const imageType = await detectImageType(firstImageUrl);
-          console.log(`Detected image type: ${imageType}`);
-          
-          // Store the image type in thread metadata for assistant context
-          // The user message remains as they typed it
-          finalMessage = message || `I've shared an image with you.`;
-          
-          // We'll use thread metadata to pass context to the assistant
-          req.body.imageContext = {
-            type: imageType,
-            url: firstImageUrl
-          };
+          try {
+            // For now, we'll handle the first image for type detection
+            // Upload the first image to get a URL for analysis
+            const { uploadImageToCloudinary } = await import("./services/cloudinary-service");
+            const firstImageUrl = await uploadImageToCloudinary(validatedImages[0]);
+            
+            // Detect the image type
+            const imageType = await detectImageType(firstImageUrl);
+            console.log(`Detected image type: ${imageType}`);
+            
+            // Store the image type in thread metadata for assistant context
+            // The user message remains as they typed it
+            finalMessage = message || `I've shared an image with you.`;
+            
+            // We'll use thread metadata to pass context to the assistant
+            imageContext = {
+              type: imageType,
+              url: firstImageUrl
+            };
+          } catch (imageUploadError) {
+            console.error("Error uploading images to Cloudinary:", imageUploadError);
+            
+            // If image upload fails, continue with text-only message if available
+            if (message && message.trim()) {
+              console.log("Image upload failed, proceeding with text-only message");
+              finalMessage = `${message}
+
+Please respond as SomBuddy, a friendly wine-pairing expert. Do not use markdown syntax in your response. Do not format with asterisks, headers, or hyphen bullets. Use plain text only. Structure your reply using line breaks, emoji (e.g., 🍷, ✅, 🚫), and natural spacing to guide the user visually. Keep responses clear, friendly, and beginner-safe.`;
+              // Clear images array since upload failed
+              validatedImages.length = 0;
+            } else {
+              // If there's no text message and image upload failed, return error
+              return res.status(502).json({ 
+                message: "Error uploading image to cloud storage. Please try again or use a different image.",
+                error: imageUploadError instanceof Error ? imageUploadError.message : String(imageUploadError)
+              });
+            }
+          }
         } else if (message) {
           // For text-only messages, add formatting instructions
           finalMessage = `${message}
 
 Please respond as SomBuddy, a friendly wine-pairing expert. Do not use markdown syntax in your response. Do not format with asterisks, headers, or hyphen bullets. Use plain text only. Structure your reply using line breaks, emoji (e.g., 🍷, ✅, 🚫), and natural spacing to guide the user visually. Keep responses clear, friendly, and beginner-safe.`;
+        }
+        
+        // Store image context if we have it
+        if (imageContext) {
+          req.body.imageContext = imageContext;
         }
         
         await addMessageToThread(threadId, finalMessage, validatedImages);

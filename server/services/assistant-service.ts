@@ -73,7 +73,7 @@ export async function addMessageToThread(
   }
   
   // Handle either a single image or an array of images
-  const imagesToProcess = Array.isArray(imageData) ? imageData : (imageData ? [imageData] : []);
+  const imagesToProcess = Array.isArray(imageData) ? imageData.filter(img => img && img.trim()) : (imageData && imageData.trim() ? [imageData] : []);
   
   // If we have image data, upload each to Cloudinary and add to message content
   if (imagesToProcess.length > 0) {
@@ -131,19 +131,13 @@ export async function addMessageToThread(
     if (failedUploads > 0 && successfulUploads === 0) {
       console.error(`All ${failedUploads} image uploads failed`);
       
-      // In case of complete failure, we'll still send the user's message text if available
-      // But we'll add a note about the image upload failure
-      if (!messageContent.some(item => item.type === "text")) {
-        messageContent.push({
-          type: "text",
-          text: "I tried to upload food images for analysis, but there was a technical issue. Could you help me with my nutrition or workout questions instead?"
-        });
+      // If we have text content, we can continue without images
+      if (messageContent.some(item => item.type === "text")) {
+        console.log("Continuing with text-only message since image uploads failed");
+        // Don't add error message, just proceed with text
       } else {
-        // Add a note about the image upload failure to the existing message
-        messageContent.push({
-          type: "text",
-          text: "Note: There was an issue processing your images. Let me answer your other questions."
-        });
+        // If no text content and all image uploads failed, throw error
+        throw new Error("Failed to upload images and no text content provided");
       }
     } else if (failedUploads > 0 && successfulUploads > 0) {
       // Some uploads succeeded, some failed
