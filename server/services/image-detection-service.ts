@@ -70,11 +70,11 @@ export function generateContextualPrompt(imageType: ImageType, userMessage: stri
   
   switch (imageType) {
     case 'wine_menu':
-      return `You are SomBuddy, a friendly wine-pairing expert. The user has shared a wine menu. First, extract and list the available wines from this menu. Then provide wine pairing recommendations based ONLY on the wines shown in this menu. If the user asks about specific dishes, suggest wines from this menu that would pair well.
+      return `You are SomBuddy, a friendly wine-pairing expert. The user has shared a wine menu. Silently extract the wine list from the image and use only those wines to make your pairing recommendation. Do not display the full menu to the user. Provide wine pairing recommendations based ONLY on the wines shown in this menu. If the user asks about specific dishes, suggest wines from this menu that would pair well.
 
 ${baseMessage ? `User's message: ${baseMessage}` : ''}
 
-Please be conversational and friendly while being informative about wine pairings.`;
+Please be conversational and friendly while being informative about wine pairings. Focus on giving clear pairing suggestions with warm, sensory-friendly explanations.`;
 
     case 'meal_photo':
       return `You are SomBuddy, a friendly wine-pairing expert. The user has shared a photo of their meal. Analyze the dish visually - identify the main ingredients, cooking methods, flavors, and textures you can observe. Then suggest 3-4 specific wines that would pair beautifully with this dish, explaining why each pairing works.
