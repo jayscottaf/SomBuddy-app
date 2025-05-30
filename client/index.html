@@ -41,6 +41,24 @@
     <link rel="manifest" href="/manifest.json" />
     <link rel="apple-touch-icon" href="/icons/icon-192.png" />
     <title>SomBuddy</title>
+    <style>
+      :root {
+        --safe-area-inset-bottom: env(safe-area-inset-bottom, 0px);
+      }
+      
+      /* Ensure proper viewport height handling */
+      html, body {
+        height: 100%;
+        overflow-x: hidden;
+      }
+      
+      /* iOS safe area support */
+      @supports (padding: max(0px)) {
+        .safe-bottom {
+          padding-bottom: max(34px, env(safe-area-inset-bottom));
+        }
+      }
+    </style>
   </head>
   <body>
     <div id="root"></div>
