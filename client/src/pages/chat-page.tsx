@@ -49,14 +49,14 @@ export default function ChatPage() {
       
       if (isMobile) {
         if (isIOS) {
-          // iOS devices need more space for home indicator
-          setMobileBottomSpacing(100);
+          // iOS devices need more space for home indicator and safe area
+          setMobileBottomSpacing(140);
         } else if (isAndroid) {
-          // Android gesture navigation
-          setMobileBottomSpacing(80);
+          // Android gesture navigation with extra spacing
+          setMobileBottomSpacing(120);
         } else {
-          // Generic mobile
-          setMobileBottomSpacing(70);
+          // Generic mobile with safe spacing
+          setMobileBottomSpacing(110);
         }
       } else {
         setMobileBottomSpacing(20);
@@ -398,7 +398,7 @@ export default function ChatPage() {
       {/* Messages container - scrollable area between fixed header and input */}
       <div 
         className="flex-1 overflow-y-auto p-4 bg-merlot pt-20"
-        style={{ paddingBottom: 'calc(120px + env(safe-area-inset-bottom, 0px))' }}
+        style={{ paddingBottom: 'calc(160px + env(safe-area-inset-bottom, 0px))' }}
       >
         <div className="flex flex-col space-y-4">
           {messages.map((message, index) => (
