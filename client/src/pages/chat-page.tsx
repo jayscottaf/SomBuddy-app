@@ -244,7 +244,7 @@ export default function ChatPage() {
     },
   });
 
-  
+
 
   // Send a message
   const sendMessage = () => {
@@ -342,12 +342,7 @@ export default function ChatPage() {
       </div>
 
       {/* Messages container - scrollable area between fixed header and input */}
-      <div 
-        className="flex-1 overflow-y-auto p-4 bg-merlot pt-20"
-        style={{ 
-          paddingBottom: `calc(100px + env(safe-area-inset-bottom, 20px))` // Input height + safe area
-        }}
-      >
+      <div className="flex-1 overflow-y-auto p-4 bg-merlot pt-20 pb-40">
         <div className="flex flex-col space-y-4">
           {messages.map((message, index) => (
             <div
@@ -466,14 +461,12 @@ export default function ChatPage() {
         </div>
       </div>
 
-      {/* Input area - fixed at bottom with safe area spacing */}
-      <div 
-        className="p-3 border-t border-zinc-800 bg-black/40 backdrop-blur-lg fixed left-0 right-0 z-20"
+      <div
+        className="fixed left-2 right-2 z-20 bg-[#3f1b19] backdrop-blur-sm border border-gold/30 rounded-full p-2"
         style={{ 
-          bottom: `calc(env(safe-area-inset-bottom, 0px) + 20px)`
+          bottom: 'max(20px, calc(env(safe-area-inset-bottom) + 10px))'
         }}
       >
-        {/* Display images to be sent - as thumbnails */}
         {tempImages.length > 0 && (
           <div className="mb-4">
             <div className="flex items-center mb-2">
@@ -564,6 +557,6 @@ export default function ChatPage() {
         </div>
       </div>
     </div>
-    
+
   );
 }
