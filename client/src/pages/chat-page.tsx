@@ -397,55 +397,11 @@ export default function ChatPage() {
                         : "px-4 py-3 bg-[#3f1b19] text-[#ddcaa1] border border-gold/30 rounded-xl whitespace-pre-wrap break-words text-sm leading-relaxed space-y-2 w-full"
                     }
                   >
-                    {message.content.map((text, i) => {
-                      // Check if text contains list-like formatting (bullets, numbers, etc.)
-                      const hasListItems = text.includes("- ") || 
-                                          /\d+\.\s/.test(text) || 
-                                          text.includes("* ") ||
-                                          text.includes("• ");
-
-                      if (hasListItems) {
-                        // Split by common list separators
-                        const lines = text.split(/\n/);
-                        return (
-                          <div key={i} className="mb-2">
-                            {lines.map((line, lineIndex) => {
-                              // Check if this line is a list item
-                              const isListItem = line.trim().startsWith("- ") || 
-                                              /^\d+\.\s/.test(line.trim()) ||
-                                              line.trim().startsWith("* ") ||
-                                              line.trim().startsWith("• ");
-
-                              if (isListItem) {
-                                return (
-                                  <div key={lineIndex} className="flex mb-1">
-                                    <div className="mr-3 flex-shrink-0 text-gold">
-                                      {line.trim().startsWith("- ") || line.trim().startsWith("* ") || line.trim().startsWith("• ") ? "•" : line.trim().match(/^\d+\./)?.[0]}
-                                    </div>
-                                    <div className="flex-1">{line.replace(/^-\s|\*\s|•\s|\d+\.\s/, "")}</div>
-                                  </div>
-                                );
-                              } else {
-                                return <p key={lineIndex} className="mb-1">{line}</p>;
-                              }
-                            })}
-                          </div>
-                        );
-                      } else {
-                        // Check if text appears to be code (has indentation or common syntax)
-                      const isCode = text.includes('    ') || /[{};()=]/.test(text);
-
-                      return isCode ? (
-                        <pre key={i} className="bg-black/20 p-2 rounded-md font-mono text-sm overflow-x-auto mb-2">
-                          <code>{text}</code>
-                        </pre>
-                      ) : (
-                        <p key={i} className="mb-.5 leading-relaxed whitespace-pre-wrap">
-                          {text}
-                        </p>
-                      );
-                      }
-                    })}
+                    {message.content.map((text, i) => (
+                      <div key={i} className="mb-2 leading-relaxed whitespace-pre-wrap">
+                        {text}
+                      </div>
+                    ))}
 
                     {message.id === "processing" && (
                       <div className="flex items-center mt-1">
