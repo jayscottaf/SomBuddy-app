@@ -5,7 +5,7 @@ import { useToast } from "@/hooks/use-toast";
 import { ImageUpload } from "@/components/ui/image-upload";
 import { Button } from "@/components/ui/button";
 import { Link } from "wouter";
-import { Loader2, Send } from "lucide-react"; 
+import { Loader2, Send } from "lucide-react";
 
 interface Message {
   id: string;
@@ -55,7 +55,9 @@ export default function ChatPage() {
         {
           id: "welcome",
           role: "assistant",
-          content: ["Welcome to SomBuddy — your friendly wine-pairing guide. I can help you choose the perfect wine for your meal, dessert, mood, or setting. Want to snap a pic or just describe your dish?"],
+          content: [
+            "Welcome to SomBuddy — your friendly wine-pairing guide. I can help you choose the perfect wine for your meal, dessert, mood, or setting. Want to snap a pic or just describe your dish?",
+          ],
         },
       ]);
     } catch (error) {
@@ -74,7 +76,10 @@ export default function ChatPage() {
   const fetchMessages = async (tid: string) => {
     try {
       setIsLoading(true);
-      const response = await apiRequest("GET", `/api/assistant/messages/${tid}`);
+      const response = await apiRequest(
+        "GET",
+        `/api/assistant/messages/${tid}`,
+      );
       if (!response.ok) {
         throw new Error("Failed to fetch messages");
       }
@@ -95,7 +100,9 @@ export default function ChatPage() {
 
           // Extract all image URLs (both direct URLs and file references)
           const imageUrls = msg.content
-            .filter((c: any) => c.type === "image_url" || c.type === "image_file")
+            .filter(
+              (c: any) => c.type === "image_url" || c.type === "image_file",
+            )
             .map((c: any) => {
               if (c.type === "image_url") return c.image_url.url;
               if (c.type === "image_file") return c.image_file.file_id;
@@ -116,7 +123,9 @@ export default function ChatPage() {
         formattedMessages.push({
           id: "welcome",
           role: "assistant",
-          content: ["Welcome to SomBuddy — your friendly wine-pairing guide. I can help you choose the perfect wine for your meal, dessert, mood, or setting. Want to snap a pic or just describe your dish?"],
+          content: [
+            "Welcome to SomBuddy — your friendly wine-pairing guide. I can help you choose the perfect wine for your meal, dessert, mood, or setting. Want to snap a pic or just describe your dish?",
+          ],
         });
       }
 
@@ -135,12 +144,12 @@ export default function ChatPage() {
 
   // Send a message mutation
   const sendMessageMutation = useMutation({
-    mutationFn: async ({ 
-      message, 
-      imageData, 
-      imageDataArray 
-    }: { 
-      message: string; 
+    mutationFn: async ({
+      message,
+      imageData,
+      imageDataArray,
+    }: {
+      message: string;
       imageData?: string;
       imageDataArray?: string[];
     }) => {
@@ -173,7 +182,9 @@ export default function ChatPage() {
 
           // Extract all image URLs (both direct URLs and file references)
           const imageUrls = msg.content
-            .filter((c: any) => c.type === "image_url" || c.type === "image_file")
+            .filter(
+              (c: any) => c.type === "image_url" || c.type === "image_file",
+            )
             .map((c: any) => {
               if (c.type === "image_url") return c.image_url.url;
               if (c.type === "image_file") return c.image_file.file_id;
@@ -201,7 +212,7 @@ export default function ChatPage() {
 
       if (error instanceof Error) {
         // If there's a cause with structured error information
-        if ('cause' in error) {
+        if ("cause" in error) {
           const cause = error.cause as any;
           if (cause && cause.message) {
             errorMessage = cause.message;
@@ -212,24 +223,37 @@ export default function ChatPage() {
         const errorString = error.message.toLowerCase();
 
         // Handle different types of errors with specific messages
-        if (errorString.includes('cloud') || errorString.includes('storage')) {
+        if (errorString.includes("cloud") || errorString.includes("storage")) {
           errorTitle = "Cloud Storage Error";
-          errorMessage = "Error uploading image to cloud storage. Please try again with a different image.";
-        } else if (errorString.includes('image') || 
-                  errorString.includes('file') || 
-                  errorString.includes('too large') || 
-                  errorString.includes('size')) {
+          errorMessage =
+            "Error uploading image to cloud storage. Please try again with a different image.";
+        } else if (
+          errorString.includes("image") ||
+          errorString.includes("file") ||
+          errorString.includes("too large") ||
+          errorString.includes("size")
+        ) {
           errorTitle = "Image Error";
-          errorMessage = "Image too large. Please try with a smaller image or reduce its quality.";
-        } else if (errorString.includes('format') || errorString.includes('invalid')) {
+          errorMessage =
+            "Image too large. Please try with a smaller image or reduce its quality.";
+        } else if (
+          errorString.includes("format") ||
+          errorString.includes("invalid")
+        ) {
           errorTitle = "Format Error";
-          errorMessage = "Invalid image format. Please try with a different image.";
-        } else if (errorString.includes('timeout')) {
+          errorMessage =
+            "Invalid image format. Please try with a different image.";
+        } else if (errorString.includes("timeout")) {
           errorTitle = "Timeout Error";
-          errorMessage = "The AI took too long to respond. Please try again or ask a different question.";
-        } else if (errorString.includes('rate limit') || errorString.includes('too many requests')) {
+          errorMessage =
+            "The AI took too long to respond. Please try again or ask a different question.";
+        } else if (
+          errorString.includes("rate limit") ||
+          errorString.includes("too many requests")
+        ) {
           errorTitle = "Rate Limit";
-          errorMessage = "You've made too many requests. Please wait a moment and try again.";
+          errorMessage =
+            "You've made too many requests. Please wait a moment and try again.";
         }
       }
 
@@ -240,7 +264,9 @@ export default function ChatPage() {
       });
 
       // Remove the processing message from the UI
-      setMessages(messages => messages.filter(msg => msg.id !== "processing"));
+      setMessages((messages) =>
+        messages.filter((msg) => msg.id !== "processing"),
+      );
     },
   });
 
@@ -301,7 +327,7 @@ export default function ChatPage() {
     const textarea = textareaRef.current;
     if (textarea) {
       // Reset height to auto to get the correct scrollHeight
-      textarea.style.height = 'auto';
+      textarea.style.height = "auto";
 
       // Set the height to match the content (with a max of 150px)
       const newHeight = Math.min(textarea.scrollHeight, 150);
@@ -314,19 +340,19 @@ export default function ChatPage() {
     autoResizeTextarea();
   }, [input]);
 
-  const handleImageSelect = (file: File, preview: string) => {
+  const handleImageSelect = (_: File, preview: string) => {
     // Add the new image to the array
-    setTempImages(prevImages => [...prevImages, preview]);
+    setTempImages((prevImages) => [...prevImages, preview]);
     // No toast notification needed - the image preview is visible
   };
 
   // Remove an image from the tempImages array
   const removeImage = (index: number) => {
-    setTempImages(prevImages => prevImages.filter((_, i) => i !== index));
+    setTempImages((prevImages) => prevImages.filter((_, i) => i !== index));
   };
 
   return (
-    <div className="flex flex-col h-screen bg-merlot text-cream overflow-hidden">
+    <div className="flex flex-col h-screen bg-merlot text-cream">
       {/* Fixed Header */}
       <div className="flex items-center justify-between px-4 py-3 fixed top-0 left-0 right-0 z-10 border-b border-zinc-800 bg-black/15 backdrop-blur-md">
         <div className="flex items-center space-x-2">
@@ -340,7 +366,10 @@ export default function ChatPage() {
       </div>
 
       {/* Messages container - scrollable area between fixed header and input */}
-      <div className="flex-1 overflow-y-auto p-4 bg-merlot pb-20 pt-20">
+      <div 
+        className="flex-1 overflow-y-auto p-4 bg-merlot pt-20"
+        style={{ paddingBottom: 'calc(5rem + env(safe-area-inset-bottom))' }}
+      >
         <div className="flex flex-col space-y-4">
           {messages.map((message, index) => (
             <div
@@ -349,22 +378,33 @@ export default function ChatPage() {
                 message.role === "user" ? "justify-end" : "justify-start"
               }`}
             >
-              <div className={`flex flex-col space-y-2 ${message.role === "user" ? "max-w-[75%]" : "max-w-[85%]"}`}>
+              <div
+                className={`flex flex-col space-y-2 ${message.role === "user" ? "max-w-[75%]" : "max-w-[85%]"}`}
+              >
                 {message.imageUrls && message.imageUrls.length > 0 && (
-                  <div className={`flex flex-wrap gap-1 max-w-[90%] ${
-                      message.role === "user" ? "ml-auto justify-end" : "mr-auto justify-start"
-                    }`}>
+                  <div
+                    className={`flex flex-wrap gap-1 max-w-[90%] ${
+                      message.role === "user"
+                        ? "ml-auto justify-end"
+                        : "mr-auto justify-start"
+                    }`}
+                  >
                     {message.imageUrls.map((imageUrl, imgIndex) => (
-                      <div key={imgIndex} className={`rounded-lg overflow-hidden inline-block ${
-                        message.role === "user" ? "ml-1" : "mr-1"
-                      }`}>
+                      <div
+                        key={imgIndex}
+                        className={`rounded-lg inline-block ${
+                          message.role === "user" ? "ml-1" : "mr-1"
+                        }`}
+                      >
                         <img
                           src={
                             imageUrl && imageUrl.startsWith("data:")
                               ? imageUrl
                               : imageUrl && imageUrl.startsWith("http")
                                 ? imageUrl // Direct URL (like Cloudinary)
-                                : imageUrl ? `https://api.openai.com/v1/files/${imageUrl}/content` : '' // OpenAI file reference
+                                : imageUrl
+                                  ? `https://api.openai.com/v1/files/${imageUrl}/content`
+                                  : "" // OpenAI file reference
                           }
                           alt={`Uploaded image ${imgIndex + 1}`}
                           className="max-h-[160px] max-w-[160px] object-cover cursor-pointer hover:opacity-90 transition-opacity"
@@ -375,7 +415,7 @@ export default function ChatPage() {
                                 : imageUrl.startsWith("http")
                                   ? imageUrl
                                   : `https://api.openai.com/v1/files/${imageUrl}/content`;
-                              window.open(fullImageUrl, '_blank');
+                              window.open(fullImageUrl, "_blank");
                             }
                           }}
                           title="Click to view full-size image"
@@ -385,7 +425,9 @@ export default function ChatPage() {
                   </div>
                 )}
 
-                {((message.content.length > 0 && message.content[0]?.trim() !== "") || message.id === "processing") && (
+                {((message.content.length > 0 &&
+                  message.content[0]?.trim() !== "") ||
+                  message.id === "processing") && (
                   <div
                     className={`rounded-xl py-1.5 px-3 inline-block ${
                       message.role === "user"
@@ -395,10 +437,11 @@ export default function ChatPage() {
                   >
                     {message.content.map((text, i) => {
                       // Check if text contains list-like formatting (bullets, numbers, etc.)
-                      const hasListItems = text.includes("- ") || 
-                                          /\d+\.\s/.test(text) || 
-                                          text.includes("* ") ||
-                                          text.includes("• ");
+                      const hasListItems =
+                        text.includes("- ") ||
+                        /\d+\.\s/.test(text) ||
+                        text.includes("* ") ||
+                        text.includes("• ");
 
                       if (hasListItems) {
                         // Split by common list separators
@@ -407,39 +450,60 @@ export default function ChatPage() {
                           <div key={i} className="mb-2">
                             {lines.map((line, lineIndex) => {
                               // Check if this line is a list item
-                              const isListItem = line.trim().startsWith("- ") || 
-                                              /^\d+\.\s/.test(line.trim()) ||
-                                              line.trim().startsWith("* ") ||
-                                              line.trim().startsWith("• ");
+                              const isListItem =
+                                line.trim().startsWith("- ") ||
+                                /^\d+\.\s/.test(line.trim()) ||
+                                line.trim().startsWith("* ") ||
+                                line.trim().startsWith("• ");
 
                               if (isListItem) {
                                 return (
                                   <div key={lineIndex} className="flex mb-1">
                                     <div className="mr-3 flex-shrink-0 text-gold">
-                                      {line.trim().startsWith("- ") || line.trim().startsWith("* ") || line.trim().startsWith("• ") ? "•" : line.trim().match(/^\d+\./)?.[0]}
+                                      {line.trim().startsWith("- ") ||
+                                      line.trim().startsWith("* ") ||
+                                      line.trim().startsWith("• ")
+                                        ? "•"
+                                        : line.trim().match(/^\d+\./)?.[0]}
                                     </div>
-                                    <div className="flex-1">{line.replace(/^-\s|\*\s|•\s|\d+\.\s/, "")}</div>
+                                    <div className="flex-1">
+                                      {line.replace(
+                                        /^-\s|\*\s|•\s|\d+\.\s/,
+                                        "",
+                                      )}
+                                    </div>
                                   </div>
                                 );
                               } else {
-                                return <p key={lineIndex} className="mb-1">{line}</p>;
+                                return (
+                                  <p key={lineIndex} className="mb-1">
+                                    {line}
+                                  </p>
+                                );
                               }
                             })}
                           </div>
                         );
                       } else {
                         // Check if text appears to be code (has indentation or common syntax)
-                      const isCode = text.includes('    ') || /[{};()=]/.test(text);
+                        const isCode =
+                          text.includes("    ") || /[{};()=]/.test(text);
 
-                      return isCode ? (
-                        <pre key={i} className="bg-black/20 p-2 rounded-md font-mono text-sm overflow-x-auto mb-2">
-                          <code>{text}</code>
-                        </pre>
-                      ) : (
-                        <p key={i} className="mb-.5 leading-relaxed whitespace-pre-wrap">
-                          {text}
-                        </p>
-                      );
+                        return isCode ? (
+                          <pre
+                            key={i}
+                            className="bg-black/20 p-2 rounded-md font-mono text-sm overflow-x-auto mb-2"
+                          >
+                            <code>{text}</code>
+                          </pre>
+                        ) : (
+                          <p
+                            key={i}
+                            className="mb-.5 leading-relaxed whitespace-pre-wrap"
+                          >
+                            {text}
+                          </p>
+                        );
                       }
                     })}
 
@@ -459,57 +523,54 @@ export default function ChatPage() {
         </div>
       </div>
 
-      {/* Input area - fixed at bottom */}
-      <div className="p-3 border-t border-zinc-800 bg-black/40 backdrop-blur-lg fixed bottom-0 left-0 right-0 z-20">
-        {/* Display images to be sent - as thumbnails */}
+      {/* Input area - mobile-optimized and safe from swipe bar */}
+      <div
+        className="fixed left-0 right-0 z-20 bg-[#3f1b19] backdrop-blur-sm border-t border-gold/30 p-3"
+        style={{ bottom: 'calc(env(safe-area-inset-bottom, 0px) + 12px)' }}
+      >
+        {/* Image previews (above input) */}
         {tempImages.length > 0 && (
-          <div className="mb-4">
-            <div className="flex items-center mb-2">
-              <p className="text-sm text-gray-300">{tempImages.length} {tempImages.length === 1 ? 'image' : 'images'} ready to analyze</p>
-              <p className="text-xs text-gray-400 ml-2">Add a message or send as is. Click images to preview full size.</p>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {tempImages.map((img, index) => (
-                <div key={index} className="relative">
-                  <img
-                    src={img}
-                    alt={`Preview ${index + 1}`}
-                    className="h-0 w-20 object-cover rounded-lg border border-gray-600 hover:opacity-90 transition-opacity"
-                    onClick={() => window.open(img, '_blank')}
-                    title="Click to view full-size image"
-                  />
-                  <button
-                    onClick={() => removeImage(index)}
-                    className="absolute -top-2 -right-2 bg-gray-800 rounded-full p-1 text-gray-400 hover:text-gray-200 hover:bg-gray-700"
-                    title="Remove image"
+          <div className="flex flex-wrap gap-2 p-2 bg-gray-100 rounded-md mb-2">
+            {tempImages.map((img, index) => (
+              <div key={index} className="relative">
+                <img
+                  src={img}
+                  alt={`Preview ${index + 1}`}
+                  className="w-20 h-20 object-cover rounded border"
+                  onClick={() => window.open(img, "_blank")}
+                />
+                <button
+                  onClick={() => removeImage(index)}
+                  className="absolute -top-2 -right-2 bg-gray-800 rounded-full p-1 text-gray-400 hover:text-gray-200 hover:bg-gray-700"
+                  title="Remove image"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
                   >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      width="16"
-                      height="16"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
-                      <line x1="18" y1="6" x2="6" y2="18"></line>
-                      <line x1="6" y1="6" x2="18" y2="18"></line>
-                    </svg>
-                  </button>
-                </div>
-              ))}
-            </div>
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                  </svg>
+                </button>
+              </div>
+            ))}
           </div>
         )}
 
+        {/* Chat input area */}
         <div className="flex items-end space-x-2">
           <ImageUpload
             onImageSelect={handleImageSelect}
             className="text-gold hover:text-gold/80 p-2 self-center"
           />
-          <div className="flex-1 bg-[#3f1b19] text-[#ddc393] rounded-3xl overflow-hidden border border-gold/30">
+          <div className="flex-1 bg-[#3f1b19] text-[#ddc393] rounded-3xl border border-gold/30">
             <textarea
               ref={textareaRef}
               className="w-full bg-[#3f1b19] text-[#ddc393] placeholder:text-[#ddc393]/70 border-none px-4 py-3 focus:outline-none resize-none"
@@ -520,19 +581,18 @@ export default function ChatPage() {
               spellCheck="true"
               autoCorrect="on"
               autoCapitalize="sentences"
-              data-gramm="true"
-              data-gramm_editor="true"
-              data-enable-grammarly="true"
               disabled={sendMessageMutation.isPending || isLoading}
+              onInput={autoResizeTextarea}
               onKeyDown={(e) => {
                 if (e.key === "Enter" && !e.shiftKey) {
                   e.preventDefault();
                   sendMessage();
                 }
               }}
-              style={{ 
-                overflowY: 'hidden',
-                minHeight: '40px',
+              style={{
+                overflowY: "hidden",
+                minHeight: "40px",
+                maxHeight: "150px",
               }}
             />
           </div>
@@ -541,7 +601,11 @@ export default function ChatPage() {
             variant="ghost"
             className="h-10 w-10 rounded-full bg-gold text-black hover:bg-gold/90 self-center"
             onClick={sendMessage}
-            disabled={sendMessageMutation.isPending || isLoading || (!input.trim() && tempImages.length === 0)}
+            disabled={
+              sendMessageMutation.isPending ||
+              isLoading ||
+              (!input.trim() && tempImages.length === 0)
+            }
           >
             {sendMessageMutation.isPending ? (
               <Loader2 className="h-5 w-5 animate-spin" />
@@ -552,6 +616,5 @@ export default function ChatPage() {
         </div>
       </div>
     </div>
-    
   );
 }
