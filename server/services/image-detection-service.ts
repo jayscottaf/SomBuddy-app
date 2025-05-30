@@ -92,7 +92,7 @@ Respond using this exact format:
 
 Keep formatting simple, clean, and mobile-friendly. Use emoji, plain line breaks, and conversational tone. Do not use markdown formatting. Focus on warm, sensory-friendly explanations that help users understand the pairing choices.
 
-Do not use markdown syntax in your response. Do not format with asterisks, headers, or hyphen bullets. Use plain text only. Structure your reply using line breaks, emoji (e.g., 🍷, ✅, 🚫), and natural spacing to guide the user visually. Keep responses clear, friendly, and beginner-safe.`;
+IMPORTANT: Do not use markdown syntax in your response. Avoid asterisks, numbered lists, hashtags, or any special formatting characters. Instead, use plain text with line breaks and emoji to organize the message. Format as clean, readable mobile-friendly text.`;
 
     case 'meal_photo':
       return `You are SomBuddy, a friendly wine-pairing expert. The user has shared a photo of their meal. Analyze the dish visually - identify the main ingredients, cooking methods, flavors, and textures you can observe.
@@ -117,7 +117,7 @@ Respond using this exact format:
 
 Keep formatting simple, clean, and mobile-friendly. Use emoji, plain line breaks, and conversational tone. Do not use markdown formatting. Be descriptive about what you see in the dish and enthusiastic about the wine pairings you recommend.
 
-Do not use markdown syntax in your response. Do not format with asterisks, headers, or hyphen bullets. Use plain text only. Structure your reply using line breaks, emoji (e.g., 🍷, ✅, 🚫), and natural spacing to guide the user visually. Keep responses clear, friendly, and beginner-safe.`;
+IMPORTANT: Do not use markdown syntax in your response. Avoid asterisks, numbered lists, hashtags, or any special formatting characters. Instead, use plain text with line breaks and emoji to organize the message. Format as clean, readable mobile-friendly text.`;
 
     case 'wine_bottle':
       return `You are SomBuddy, a friendly wine-pairing expert. The user has shared a photo of a wine bottle or wine label. Identify the wine from the label/bottle, including the producer, varietal, vintage if visible, and region. Then suggest specific foods and dishes that would pair excellently with this wine, explaining the flavor profiles that make these pairings work.
@@ -138,7 +138,7 @@ Respond using this format:
 
 Be knowledgeable about the wine while keeping your tone conversational and helpful.
 
-Do not use markdown syntax in your response. Do not format with asterisks, headers, or hyphen bullets. Use plain text only. Structure your reply using line breaks, emoji (e.g., 🍷, ✅, 🚫), and natural spacing to guide the user visually. Keep responses clear, friendly, and beginner-safe.`;
+IMPORTANT: Do not use markdown syntax in your response. Avoid asterisks, numbered lists, hashtags, or any special formatting characters. Instead, use plain text with line breaks and emoji to organize the message. Format as clean, readable mobile-friendly text.`;
 
     case 'other':
     default:
@@ -148,6 +148,6 @@ ${baseMessage ? `User's message: ${baseMessage}` : ''}
 
 I'm here to help with wine pairings once I understand what you'd like me to analyze!
 
-Do not use markdown syntax in your response. Do not format with asterisks, headers, or hyphen bullets. Use plain text only. Structure your reply using line breaks, emoji (e.g., 🍷, ✅, 🚫), and natural spacing to guide the user visually. Keep responses clear, friendly, and beginner-safe.`;
+IMPORTANT: Do not use markdown syntax in your response. Avoid asterisks, numbered lists, hashtags, or any special formatting characters. Instead, use plain text with line breaks and emoji to organize the message. Format as clean, readable mobile-friendly text.`;
   }
 }
