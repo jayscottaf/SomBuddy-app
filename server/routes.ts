@@ -26,8 +26,7 @@ import {
 import { generateMealPlan } from "./services/meal-service";
 import { generateWorkoutPlan } from "./services/workout-service";
 import { analyzeMealImage } from "./services/image-analysis-service";
-import { detectImageType } from "./services/image-detection-service";
-import { getAssistantInstructions, getGeneralWinePairingInstructions } from "./services/assistant-instructions";
+import { detectImageType, generateContextualPrompt } from "./services/image-detection-service";
 
 declare module "express-session" {
   interface SessionData {
@@ -58,24 +57,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/auth/register", async (req: Request, res: Response) => {
     try {
       const data = registerSchema.parse(req.body);
-      
+
       // Check if user already exists
       const existingUser = await storage.getUserByEmail(data.email);
       if (existingUser) {
         return res.status(400).json({ message: "User already exists" });
       }
-      
+
       // Hash password
       const salt = await bcrypt.genSalt(10);
       const hashedPassword = await bcrypt.hash(data.password, salt);
-      
+
       // Create user
       const user = await storage.createUser({
         email: data.email,
         password: hashedPassword,
         name: "",
       });
-      
+
       // Start onboarding
       req.session.userId = user.id;
       req.session.onboarding = {
@@ -85,7 +84,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         },
         userData: {},
       };
-      
+
       res.status(201).json({ message: "User created", userId: user.id });
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -98,25 +97,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/auth/login", async (req: Request, res: Response) => {
     try {
       const data = loginSchema.parse(req.body);
-      
+
       // Find user
       const user = await storage.getUserByEmail(data.email);
       if (!user) {
         return res.status(400).json({ message: "Invalid email or password" });
       }
-      
+
       // Check password
       const isMatch = await bcrypt.compare(data.password, user.password);
       if (!isMatch) {
         return res.status(400).json({ message: "Invalid email or password" });
       }
-      
+
       // Set session
       req.session.userId = user.id;
-      
+
       // Check if user has completed onboarding
       const isOnboardingComplete = Boolean(user.name && user.age && user.heightCm && user.weightKg);
-      
+
       if (!isOnboardingComplete) {
         req.session.onboarding = {
           currentQuestion: {
@@ -126,7 +125,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           userData: {},
         };
       }
-      
+
       res.status(200).json({ 
         message: "Login successful", 
         userId: user.id,
@@ -154,12 +153,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     if (!req.session.userId) {
       return res.status(401).json({ message: "Unauthorized" });
     }
-    
+
     const onboarding = req.session.onboarding;
     if (!onboarding) {
       return res.status(400).json({ message: "No onboarding in progress" });
     }
-    
+
     res.status(200).json({ question: onboarding.currentQuestion });
   });
 
@@ -167,41 +166,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
     if (!req.session.userId) {
       return res.status(401).json({ message: "Unauthorized" });
     }
-    
+
     const { message } = req.body;
     if (!message) {
       return res.status(400).json({ message: "Message is required" });
     }
-    
+
     const onboarding = req.session.onboarding;
     if (!onboarding) {
       return res.status(400).json({ message: "No onboarding in progress" });
     }
-    
+
     try {
       const response = await processOnboardingMessage(
         message,
         onboarding.currentQuestion,
         onboarding.userData
       );
-      
+
       // Update session with the new data
       if (req.session.onboarding) {
         req.session.onboarding.userData = {
           ...onboarding.userData,
           [response.field]: response.value,
         };
-        
+
         // If there's a next question, update it
         if (response.nextQuestion) {
           req.session.onboarding.currentQuestion = response.nextQuestion;
         }
       }
-      
+
       // If onboarding is complete, save user data
       if (response.isComplete && req.session.onboarding) {
         const userData = req.session.onboarding.userData;
-        
+
         // Update user record with all collected data
         await storage.updateUser(req.session.userId, {
           name: userData.name,
@@ -216,18 +215,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
           gymMemberships: userData.gymMemberships,
           maxCommuteMinutes: userData.maxCommuteMinutes,
         });
-        
+
         // Calculate TDEE and update user
         const user = await storage.getUser(req.session.userId);
         if (user) {
           const tdee = calculateTDEE(user);
           await storage.updateUser(req.session.userId, { tdee });
         }
-        
+
         // Clear onboarding data from session
         delete req.session.onboarding;
       }
-      
+
       res.status(200).json({
         field: response.field,
         value: response.value,
@@ -244,25 +243,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
     if (!req.session.userId) {
       return res.status(401).json({ message: "Unauthorized" });
     }
-    
+
     try {
       const data = onboardingSchema.parse(req.body);
-      
+
       // Update user with onboarding data
       await storage.updateUser(req.session.userId, data);
-      
+
       // Calculate TDEE and update user
       const user = await storage.getUser(req.session.userId);
       if (user) {
         const tdee = calculateTDEE(user);
         await storage.updateUser(req.session.userId, { tdee });
       }
-      
+
       // Clear onboarding data from session if it exists
       if (req.session.onboarding) {
         delete req.session.onboarding;
       }
-      
+
       res.status(200).json({ message: "Onboarding completed successfully" });
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -277,16 +276,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     if (!req.session.userId) {
       return res.status(401).json({ message: "Unauthorized" });
     }
-    
+
     try {
       const user = await storage.getUser(req.session.userId);
       if (!user) {
         return res.status(404).json({ message: "User not found" });
       }
-      
+
       // Don't return password
       const { password, ...userWithoutPassword } = user;
-      
+
       res.status(200).json(userWithoutPassword);
     } catch (error) {
       res.status(500).json({ message: "Server error" });
@@ -298,33 +297,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
     if (!req.session.userId) {
       return res.status(401).json({ message: "Unauthorized" });
     }
-    
+
     try {
       const user = await storage.getUser(req.session.userId);
       if (!user) {
         return res.status(404).json({ message: "User not found" });
       }
-      
+
       // Calculate nutritional needs based on TDEE
       const tdee = user.tdee || calculateTDEE(user);
       const macros = calculateMacros(user, tdee);
-      
+
       // Get today's date for logs
       const today = new Date();
       today.setHours(0, 0, 0, 0);
-      
+
       // Get today's health log if it exists
       const healthLog = await storage.getHealthLogByDate(user.id, today);
-      
+
       // Get today's nutrition log if it exists
       const nutritionLog = await storage.getNutritionLogByDate(user.id, today);
-      
+
       // Get today's workout log if it exists
       const workoutLog = await storage.getWorkoutLogByDate(user.id, today);
-      
+
       // Get today's plan or generate a new one
       let dailyPlan = await storage.getDailyPlanByDate(user.id, today);
-      
+
       if (!dailyPlan) {
         // Generate a new plan
         const mealPlan = await generateMealPlan(
@@ -334,11 +333,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
           macros.fat,
           tdee
         );
-        
+
         const workoutPlan = await generateWorkoutPlan(user);
-        
+
         const motivation = await generateDailyMotivation(user);
-        
+
         // Create a new daily plan
         dailyPlan = await storage.createDailyPlan({
           date: today.toISOString().split('T')[0], // Convert Date to string format
@@ -349,16 +348,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
           motivation,
         });
       }
-      
+
       // Calculate progress percentages for stats
       const proteinProgress = nutritionLog?.protein 
         ? Math.round((nutritionLog.protein / macros.protein) * 100) 
         : 0;
-      
+
       const calorieProgress = nutritionLog?.calories 
         ? Math.round((nutritionLog.calories / tdee) * 100) 
         : 0;
-      
+
       // Response with dashboard data
       res.status(200).json({
         user: {
@@ -393,14 +392,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     if (!req.session.userId) {
       return res.status(401).json({ message: "Unauthorized" });
     }
-    
+
     try {
       const { date, ...logData } = req.body;
       const logDate = date ? new Date(date) : new Date();
-      
+
       // Check if a log already exists for this date
       const existingLog = await storage.getHealthLogByDate(req.session.userId, logDate);
-      
+
       let healthLog;
       if (existingLog) {
         // Update existing log
@@ -413,7 +412,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           ...logData,
         });
       }
-      
+
       res.status(200).json(healthLog);
     } catch (error) {
       res.status(500).json({ message: "Server error" });
@@ -425,14 +424,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     if (!req.session.userId) {
       return res.status(401).json({ message: "Unauthorized" });
     }
-    
+
     try {
       const { date, ...logData } = req.body;
       const logDate = date ? new Date(date) : new Date();
-      
+
       // Check if a log already exists for this date
       const existingLog = await storage.getNutritionLogByDate(req.session.userId, logDate);
-      
+
       let nutritionLog;
       if (existingLog) {
         // Update existing log
@@ -445,7 +444,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           ...logData,
         });
       }
-      
+
       res.status(200).json(nutritionLog);
     } catch (error) {
       res.status(500).json({ message: "Server error" });
@@ -457,14 +456,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     if (!req.session.userId) {
       return res.status(401).json({ message: "Unauthorized" });
     }
-    
+
     try {
       const { date, ...logData } = req.body;
       const logDate = date ? new Date(date) : new Date();
-      
+
       // Check if a log already exists for this date
       const existingLog = await storage.getWorkoutLogByDate(req.session.userId, logDate);
-      
+
       let workoutLog;
       if (existingLog) {
         // Update existing log
@@ -477,7 +476,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           ...logData,
         });
       }
-      
+
       res.status(200).json(workoutLog);
     } catch (error) {
       res.status(500).json({ message: "Server error" });
@@ -489,24 +488,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
     if (!req.session.userId) {
       return res.status(401).json({ message: "Unauthorized" });
     }
-    
+
     try {
       const { mood, message } = req.body;
       if (!mood) {
         return res.status(400).json({ message: "Mood is required" });
       }
-      
+
       const user = await storage.getUser(req.session.userId);
       if (!user) {
         return res.status(404).json({ message: "User not found" });
       }
-      
+
       // Process feedback with AI
       const feedbackResponse = await processFeedback(
         `Mood: ${mood}. ${message || ''}`,
         user
       );
-      
+
       res.status(200).json({ 
         message: "Feedback received",
         response: feedbackResponse
@@ -515,22 +514,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Server error" });
     }
   });
-  
+
   // Meal Photo Analysis Route
   app.post("/api/meal-analysis", async (req: Request, res: Response) => {
     if (!req.session.userId) {
       return res.status(401).json({ message: "Unauthorized" });
     }
-    
+
     try {
       const { imageData } = req.body;
       if (!imageData) {
         return res.status(400).json({ message: "Image data is required" });
       }
-      
+
       // Process the image with OpenAI's GPT-4 Vision
       const analysisResult = await analyzeMealImage(imageData);
-      
+
       // Return the analysis
       res.status(200).json({
         message: "Meal analysis complete",
@@ -543,7 +542,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Assistant Chat API Routes
-  
+
   // Initialize or retrieve a thread
   app.post("/api/assistant/thread", async (req: Request, res: Response) => {
     try {
@@ -555,118 +554,82 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Failed to create or retrieve thread" });
     }
   });
-  
+
   // Send a message to the assistant
   app.post("/api/assistant/message", async (req: Request, res: Response) => {
-    try {
-      const { threadId, message, imageData, imageDataArray } = req.body;
-      
-      if (!threadId) {
-        return res.status(400).json({ message: "Thread ID is required" });
-      }
-      
-      // Support both single imageData and multiple imageDataArray
-      const images = imageDataArray || (imageData ? [imageData] : []);
-      
-      if (!message && images.length === 0) {
-        return res.status(400).json({ message: "Message or at least one image is required" });
-      }
-      
-      // Process and validate all image data only if images exist
-      const validatedImages: string[] = [];
-      if (images.length > 0) {
-        for (const img of images) {
-          try {
-            if (!img) continue;
-            
-            const imageSizeKB = Math.round(img.length / 1024);
-            console.log(`Processing image of approximately ${imageSizeKB}KB`);
-            
-            // Check if image data is too large (OpenAI limit is ~20MB, but we'll be more conservative)
-            if (imageSizeKB > 5000) { // 5MB limit
-              return res.status(413).json({ 
-                message: "Image is too large. Please use a smaller image (maximum 5MB)." 
-              });
+    let systemInstructions = null;
+
+        try {
+          // Add the message to the thread with intelligent image analysis
+          console.log(`Adding message to thread ${threadId}`);
+
+          let finalMessage = message || "";
+          let imageContext = null;
+
+          // If we have images, detect their types and generate system instructions
+          if (validatedImages.length > 0) {
+            console.log(`Processing ${validatedImages.length} images for intelligent analysis`);
+
+            try {
+              // For now, we'll handle the first image for type detection
+              // Upload the first image to get a URL for analysis
+              const { uploadImageToCloudinary } = await import("./services/cloudinary-service");
+              const firstImageUrl = await uploadImageToCloudinary(validatedImages[0]);
+
+              // Detect the image type
+              const imageType = await detectImageType(firstImageUrl);
+              console.log(`Detected image type: ${imageType}`);
+
+              // Generate clean user message (no internal instructions)
+              finalMessage = generateContextualPrompt(imageType, message || "");
+
+              // Generate system instructions separately (not shown to user)
+              systemInstructions = generateSystemInstructions(imageType);
+
+              // Store image context for potential future use
+              imageContext = {
+                type: imageType,
+                url: firstImageUrl
+              };
+            } catch (imageUploadError) {
+              console.error("Error uploading images to Cloudinary:", imageUploadError);
+
+              // If image upload fails, continue with text-only message if available
+              if (message && message.trim()) {
+                console.log("Image upload failed, proceeding with text-only message");
+                finalMessage = message;
+                // Clear images array since upload failed
+                validatedImages.length = 0;
+              } else {
+                // If there's no text message and image upload failed, return error
+                return res.status(502).json({ 
+                  message: "Error uploading image to cloud storage. Please try again or use a different image.",
+                  error: imageUploadError instanceof Error ? imageUploadError.message : String(imageUploadError)
+                });
+              }
             }
-            
-            validatedImages.push(img);
-          } catch (imgError) {
-            console.error("Error processing image data:", imgError);
-            // Continue with other images rather than failing completely
+          } else if (message) {
+            // For text-only messages, use the message as-is
+            finalMessage = message;
           }
-        }
-      }
-      
-      try {
-        // Add the message to the thread with intelligent image analysis
-        console.log(`Adding message to thread ${threadId}`);
-        
-        let finalMessage = message || "";
-        let imageContext = null;
-        
-        // If we have images, detect their types and generate contextual prompt
-        if (validatedImages.length > 0) {
-          console.log(`Processing ${validatedImages.length} images for intelligent analysis`);
-          
-          try {
-            // For now, we'll handle the first image for type detection
-            // Upload the first image to get a URL for analysis
-            const { uploadImageToCloudinary } = await import("./services/cloudinary-service");
-            const firstImageUrl = await uploadImageToCloudinary(validatedImages[0]);
-            
-            // Detect the image type
-            const imageType = await detectImageType(firstImageUrl);
-            console.log(`Detected image type: ${imageType}`);
-            
-            // Keep the user message clean - only what they actually typed
-            finalMessage = message || "";
-            
-            // Store image context with assistant instructions for the run
-            imageContext = {
-              type: imageType,
-              url: firstImageUrl,
-              instructions: getAssistantInstructions(imageType, firstImageUrl)
-            };
-          } catch (imageUploadError) {
-            console.error("Error uploading images to Cloudinary:", imageUploadError);
-            
-            // If image upload fails, continue with text-only message if available
-            if (message && message.trim()) {
-              console.log("Image upload failed, proceeding with text-only message");
-              finalMessage = message;
-              // Clear images array since upload failed
-              validatedImages.length = 0;
-            } else {
-              // If there's no text message and image upload failed, return error
-              return res.status(502).json({ 
-                message: "Error uploading image to cloud storage. Please try again or use a different image.",
-                error: imageUploadError instanceof Error ? imageUploadError.message : String(imageUploadError)
-              });
-            }
+
+          // Store image context if we have it
+          if (imageContext) {
+            req.body.imageContext = imageContext;
           }
-        } else if (message) {
-          // For text-only messages, use the message as-is
-          // The assistant system prompt already contains behavior instructions
-          finalMessage = message;
-        }
-        
-        // Store image context if we have it
-        if (imageContext) {
-          req.body.imageContext = imageContext;
-        }
-        
-        await addMessageToThread(threadId, finalMessage, validatedImages);
-        console.log("Message and images added successfully with contextual analysis");
+
+          await addMessageToThread(threadId, finalMessage, validatedImages, systemInstructions);
+          console.log("Message and images added successfully with contextual analysis");
       } catch (messageError) {
         console.error("Error adding message to thread:", messageError);
-        
+
         // Provide more detailed error messages for common issues
         let errorMessage = "Failed to add message to thread";
         let statusCode = 500;
-        
+    
         if (messageError instanceof Error) {
           const errorText = messageError.message.toLowerCase();
-          
+
           // Check for common errors
           if (errorText.includes('cloudinary')) {
             errorMessage = "Error uploading image to cloud storage. Please try again or use a different image.";
@@ -682,28 +645,56 @@ export async function registerRoutes(app: Express): Promise<Server> {
             statusCode = 400; // Bad Request
           }
         }
-        
+
         return res.status(statusCode).json({ 
           message: errorMessage, 
           error: messageError instanceof Error ? messageError.message : String(messageError) 
         });
       }
-      
-      // Run the assistant on the thread with appropriate instructions
+
+      const { threadId, message, imageData, imageDataArray } = req.body;
+
+      if (!threadId) {
+        return res.status(400).json({ message: "Thread ID is required" });
+      }
+
+      // Support both single imageData and multiple imageDataArray
+      const images = imageDataArray || (imageData ? [imageData] : []);
+
+      if (!message && images.length === 0) {
+        return res.status(400).json({ message: "Message or at least one image is required" });
+      }
+
+      // Process and validate all image data only if images exist
+      const validatedImages: string[] = [];
+      if (images.length > 0) {
+        for (const img of images) {
+          try {
+            if (!img) continue;
+
+            const imageSizeKB = Math.round(img.length / 1024);
+            console.log(`Processing image of approximately ${imageSizeKB}KB`);
+
+            // Check if image data is too large (OpenAI limit is ~20MB, but we'll be more conservative)
+            if (imageSizeKB > 5000) { // 5MB limit
+              return res.status(413).json({ 
+                message: "Image is too large. Please use a smaller image (maximum 5MB)." 
+              });
+            }
+
+            validatedImages.push(img);
+          } catch (imgError) {
+            console.error("Error processing image data:", imgError);
+            // Continue with other images rather than failing completely
+          }
+        }
+      }
+
+      // Run the assistant on the thread
       console.log(`Running assistant on thread ${threadId}`);
       let run;
       try {
-        // Determine what instructions to use
-        let instructions = "";
-        if (imageContext && imageContext.instructions) {
-          instructions = imageContext.instructions;
-          console.log(`Using image-specific instructions for type: ${imageContext.type}`);
-        } else {
-          instructions = getGeneralWinePairingInstructions();
-          console.log("Using general wine pairing instructions");
-        }
-        
-        run = await runAssistantOnThread(threadId, 'asst_hHy68PuBx0Z44uF9cAna4oJD', instructions);
+        run = await runAssistantOnThread(threadId);
         console.log(`Run created with ID: ${run.id}`);
       } catch (runError) {
         console.error("Error running assistant:", runError);
@@ -712,24 +703,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
           error: runError instanceof Error ? runError.message : String(runError) 
         });
       }
-      
+
       // Poll for completion
       let runStatus;
       let attempts = 0;
       const maxAttempts = 30; // Maximum 30 attempts (30 seconds)
-      
+
       try {
         runStatus = await checkRunStatus(threadId, run.id);
         console.log(`Initial run status: ${runStatus.status}`);
-        
+
         while (runStatus.status !== "completed" && attempts < maxAttempts) {
           // Wait for 1 second
           await new Promise(resolve => setTimeout(resolve, 1000));
-          
+
           // Check the status again
           runStatus = await checkRunStatus(threadId, run.id);
           attempts++;
-          
+
           if (attempts % 5 === 0) {
             console.log(`Run status after ${attempts} attempts: ${runStatus.status}`);
           }
@@ -741,11 +732,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
           error: statusError instanceof Error ? statusError.message : String(statusError) 
         });
       }
-      
+
       if (runStatus.status !== "completed") {
         return res.status(408).json({ message: "Assistant processing timed out" });
       }
-      
+
       // Get the messages from the thread
       console.log(`Getting messages from thread ${threadId}`);
       let messages;
@@ -758,7 +749,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           error: messagesError instanceof Error ? messagesError.message : String(messagesError) 
         });
       }
-      
+
       res.status(200).json({ messages: messages.data });
     } catch (error) {
       console.error("Error processing message:", error);
@@ -768,19 +759,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     }
   });
-  
+
   // Get all messages from a thread
   app.get("/api/assistant/messages/:threadId", async (req: Request, res: Response) => {
     try {
       const { threadId } = req.params;
-      
+
       if (!threadId) {
         return res.status(400).json({ message: "Thread ID is required" });
       }
-      
+
       // Get the messages from the thread
       const messages = await getMessagesFromThread(threadId);
-      
+
       res.status(200).json({ messages: messages.data });
     } catch (error) {
       console.error("Error retrieving messages:", error);
