@@ -352,7 +352,7 @@ export default function ChatPage() {
   };
 
   return (
-    <div className="flex flex-col h-screen bg-merlot text-cream">
+    <div className="flex flex-col bg-merlot text-cream" style={{ height: '100dvh' }}>
       {/* Fixed Header */}
       <div className="flex items-center justify-between px-4 py-3 fixed top-0 left-0 right-0 z-10 border-b border-zinc-800 bg-black/15 backdrop-blur-md">
         <div className="flex items-center space-x-2">
@@ -368,7 +368,7 @@ export default function ChatPage() {
       {/* Messages container - scrollable area between fixed header and input */}
       <div 
         className="flex-1 overflow-y-auto p-4 bg-merlot pt-20"
-        style={{ paddingBottom: 'calc(5rem + env(safe-area-inset-bottom))' }}
+        style={{ paddingBottom: 'calc(120px + env(safe-area-inset-bottom, 0px))' }}
       >
         <div className="flex flex-col space-y-4">
           {messages.map((message, index) => (
@@ -523,10 +523,13 @@ export default function ChatPage() {
         </div>
       </div>
 
-      {/* Input area - mobile-optimized and safe from swipe bar */}
+      {/* Input area - floating above mobile navigation with sufficient clearance */}
       <div
-        className="fixed left-0 right-0 z-20 bg-[#3f1b19] backdrop-blur-sm border-t border-gold/30 p-3"
-        style={{ bottom: 'calc(env(safe-area-inset-bottom, 0px) + 12px)' }}
+        className="fixed left-2 right-2 z-20 bg-[#3f1b19] backdrop-blur-sm border border-gold/30 rounded-full p-2"
+        style={{ 
+          bottom: '80px',
+          marginBottom: 'env(safe-area-inset-bottom, 0px)'
+        }}
       >
         {/* Image previews (above input) */}
         {tempImages.length > 0 && (
