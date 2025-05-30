@@ -1,5 +1,6 @@
 import fetch from 'node-fetch';
 import { uploadImageToCloudinary } from './cloudinary-service';
+import { detectImageType, generateContextualMessages } from './image-detection-service';
 
 // API endpoint for OpenAI API proxying
 export const OPENAI_API_BASE = 'https://api.openai.com';
@@ -18,20 +19,20 @@ export async function proxyRequestToOpenAI(
       'Content-Type': 'application/json',
       'OpenAI-Beta': 'assistants=v2',
     };
-    
+
     // Create a URL for the OpenAI request
     const url = `${OPENAI_API_BASE}${path}`;
-    
+
     // Make the request to OpenAI
     const response = await fetch(url, {
       method,
       headers,
       body: body ? JSON.stringify(body) : undefined,
     });
-    
+
     // Get the response
     const data = await response.json();
-    
+
     return {
       status: response.status,
       data,
@@ -47,14 +48,14 @@ export async function getOrCreateThread(existingThreadId?: string) {
   if (existingThreadId) {
     return existingThreadId;
   }
-  
+
   // Create a new thread
   const response = await proxyRequestToOpenAI('POST', '/v1/threads', {});
-  
+
   if (response.status !== 200) {
     throw new Error(`Failed to create thread: ${JSON.stringify(response.data)}`);
   }
-  
+
   return response.data.id;
 }
 
@@ -71,39 +72,39 @@ export async function addMessageToThread(
   if (content && content.trim() !== '') {
     messageContent.push({ type: "text", text: content });
   }
-  
+
   // Handle either a single image or an array of images
   const imagesToProcess = Array.isArray(imageData) ? imageData : (imageData ? [imageData] : []);
-  
+
   // If we have image data, upload each to Cloudinary and add to message content
   if (imagesToProcess.length > 0) {
     console.log(`Processing ${imagesToProcess.length} images...`);
-    
+
     // Track successful and failed uploads
     let successfulUploads = 0;
     let failedUploads = 0;
-    
+
     // Process each image in the array
     for (const imgData of imagesToProcess) {
       try {
         if (!imgData) continue;
-        
+
         // Check image data size
         const imageSize = imgData.length;
         console.log(`Processing image ${successfulUploads + failedUploads + 1}: ${Math.round(imageSize / 1024)}KB`);
-        
+
         // First, make sure we have a valid data URL
         let processedImageData = imgData;
         if (!imgData.startsWith('data:')) {
           processedImageData = `data:image/jpeg;base64,${imgData}`;
         }
-        
+
         console.log(`Uploading image ${successfulUploads + failedUploads + 1} to Cloudinary...`);
-        
+
         // Upload the image to Cloudinary and get a public URL
         const imageUrl = await uploadImageToCloudinary(processedImageData);
         console.log(`Image ${successfulUploads + 1} uploaded successfully to Cloudinary: ${imageUrl}`);
-        
+
         // Add to content array as image_url with the public Cloudinary URL
         messageContent.push({
           type: "image_url",
@@ -111,13 +112,13 @@ export async function addMessageToThread(
             url: imageUrl
           }
         });
-        
+
         successfulUploads++;
         console.log(`Image ${successfulUploads} successfully added to message content`);
       } catch (error) {
         failedUploads++;
         console.error(`Error processing image ${successfulUploads + failedUploads}:`, error);
-        
+
         // Continue with other images rather than stopping completely
         if (error instanceof Error) {
           console.error(`Cloudinary upload failed: ${error.message}`);
@@ -126,11 +127,11 @@ export async function addMessageToThread(
         }
       }
     }
-    
+
     // Only add error message if ALL uploads failed
     if (failedUploads > 0 && successfulUploads === 0) {
       console.error(`All ${failedUploads} image uploads failed`);
-      
+
       // In case of complete failure, we'll still send the user's message text if available
       // But we'll add a note about the image upload failure
       if (!messageContent.some(item => item.type === "text")) {
@@ -148,7 +149,7 @@ export async function addMessageToThread(
     } else if (failedUploads > 0 && successfulUploads > 0) {
       // Some uploads succeeded, some failed
       console.log(`${successfulUploads} images uploaded successfully, ${failedUploads} failed`);
-      
+
       // Only add a note if there's already text content
       if (messageContent.some(item => item.type === "text")) {
         messageContent.push({
@@ -160,28 +161,60 @@ export async function addMessageToThread(
       console.log(`All ${successfulUploads} images uploaded successfully`);
     }
   }
-  
+
   if (messageContent.length === 0) {
     throw new Error('Message must include text or at least one valid image');
   }
-  
+
+  let finalMessage = content;
+  let systemMessage = '';
+
+  // If we have images, detect their type and generate contextual messages
+  if (imagesToProcess.length > 0) {
+    console.log('Processing images for intelligent analysis');
+
+    // For now, we'll use the first image to determine the context
+    // In the future, we could analyze multiple images or let the user specify
+    const firstImageUrl = await uploadImageToCloudinary(imagesToProcess[0].startsWith('data:') ? imagesToProcess[0] : `data:image/jpeg;base64,${imagesToProcess[0]}`);
+
+    console.log('Detecting image type for:', firstImageUrl.substring(0, 50) + '...');
+    const detectedImageType = await detectImageType(firstImageUrl);
+    console.log('Detected image type:', detectedImageType);
+
+    // Generate contextual messages based on image type
+    const { systemMessage: generatedSystemMessage, userMessage: contextualUserMessage } = generateContextualMessages(detectedImageType, content);
+    systemMessage = generatedSystemMessage;
+    console.log('Generated contextual messages for', detectedImageType);
+
+    // Store the system message and user message separately
+    finalMessage = contextualUserMessage;
+
+    console.log(`Generated contextual messages for ${detectedImageType}`);
+  }
+
   console.log(`Adding message to thread ${threadId} with content types: ${messageContent.map(c => c.type).join(', ')}`);
-  
+
   try {
     const response = await proxyRequestToOpenAI(
       'POST', 
       `/v1/threads/${threadId}/messages`,
       {
         role: "user",
-        content: messageContent
+        content: messageContent.length > 0 ? messageContent : [{ type: "text", text: finalMessage }]
       }
     );
-    
+
     if (response.status !== 200) {
       console.error('OpenAI API error:', response.data);
       throw new Error(`Failed to add message to thread: ${JSON.stringify(response.data)}`);
     }
-    
+
+     // If we have images, run the assistant with system instructions
+    if (imagesToProcess.length > 0) {
+      await runAssistant(threadId, systemMessage);
+      return;
+    }
+
     return response.data;
   } catch (error) {
     console.error('Error adding message to thread:', error);
@@ -205,12 +238,84 @@ export async function runAssistantOnThread(
       assistant_id: assistantId
     }
   );
-  
+
   if (response.status !== 200) {
     throw new Error(`Failed to run assistant: ${JSON.stringify(response.data)}`);
   }
-  
+
   return response.data;
+}
+
+// Run the assistant on a thread
+export async function runAssistant(threadId: string, systemInstructions?: string): Promise<void> {
+  try {
+    console.log(`Running assistant on thread ${threadId}`);
+
+    const runParams: any = {
+      assistant_id: 'asst_hHy68PuBx0Z44uF9cAna4oJD',
+    };
+
+    // Add system instructions if provided
+    if (systemInstructions) {
+      runParams.instructions = systemInstructions;
+    }
+
+    const run = await proxyRequestToOpenAI(
+      'POST',
+      `/v1/threads/${threadId}/runs`,
+      runParams
+    );
+
+    if (run.status !== 200) {
+      throw new Error(`Failed to run assistant: ${JSON.stringify(run.data)}`);
+    }
+
+    console.log(`Run created with ID: ${run.data.id}`);
+    console.log(`Initial run status: ${run.data.status}`);
+
+    // Poll for completion
+    let runStatus = run.data.status;
+    let attempts = 0;
+    const maxAttempts = 60; // 5 minutes with 5-second intervals
+
+    while (runStatus === 'queued' || runStatus === 'in_progress') {
+      if (attempts >= maxAttempts) {
+        throw new Error(`Assistant run timed out after ${maxAttempts} attempts`);
+      }
+
+      await new Promise(resolve => setTimeout(resolve, 5000)); // Wait 5 seconds
+
+      const updatedRun = await proxyRequestToOpenAI(
+        'GET',
+        `/v1/threads/${threadId}/runs/${run.data.id}`
+      );
+      runStatus = updatedRun.data.status;
+      attempts++;
+
+      if (attempts <= 5 || attempts % 5 === 0) {
+        console.log(`Run status after ${attempts} attempts: ${runStatus}`);
+      }
+    }
+
+    if (runStatus === 'failed') {
+      const failedRun = await proxyRequestToOpenAI(
+        'GET',
+        `/v1/threads/${threadId}/runs/${run.data.id}`
+      );
+      console.error('Assistant run failed:', failedRun.data.last_error);
+      throw new Error(`Assistant run failed: ${failedRun.data.last_error?.message || 'Unknown error'}`);
+    }
+
+    if (runStatus === 'requires_action') {
+      console.log('Run requires action - this should not happen with current setup');
+      throw new Error('Assistant run requires action, which is not supported');
+    }
+
+    console.log(`Run completed successfully with status: ${runStatus}`);
+  } catch (error) {
+    console.error('Error running assistant:', error);
+    throw error;
+  }
 }
 
 // Check the status of a run
@@ -219,11 +324,11 @@ export async function checkRunStatus(threadId: string, runId: string) {
     'GET',
     `/v1/threads/${threadId}/runs/${runId}`
   );
-  
+
   if (response.status !== 200) {
     throw new Error(`Failed to check run status: ${JSON.stringify(response.data)}`);
   }
-  
+
   return response.data;
 }
 
@@ -233,10 +338,10 @@ export async function getMessagesFromThread(threadId: string) {
     'GET',
     `/v1/threads/${threadId}/messages`
   );
-  
+
   if (response.status !== 200) {
     throw new Error(`Failed to get messages: ${JSON.stringify(response.data)}`);
   }
-  
+
   return response.data;
 }
