@@ -124,7 +124,21 @@ Do not use markdown syntax in your response. Do not format with asterisks, heade
 
 ${baseMessage ? `User's message: ${baseMessage}` : ''}
 
-Be knowledgeable about the wine while keeping your tone conversational and helpful.`;
+Respond using this format:
+
+🍷 Wine Identified:
+[Producer] [Wine Name] [Vintage if visible]
+[Region] [Grape varieties]
+
+✅ Perfect Pairings:
+[3-4 specific dishes that work beautifully with this wine]
+
+🔄 Why These Work:
+[Brief explanation of flavor connections]
+
+Be knowledgeable about the wine while keeping your tone conversational and helpful.
+
+Do not use markdown syntax in your response. Do not format with asterisks, headers, or hyphen bullets. Use plain text only. Structure your reply using line breaks, emoji (e.g., 🍷, ✅, 🚫), and natural spacing to guide the user visually. Keep responses clear, friendly, and beginner-safe.`;
 
     case 'other':
     default:

@@ -622,6 +622,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
             type: imageType,
             url: firstImageUrl
           };
+        } else if (message) {
+          // For text-only messages, add formatting instructions
+          finalMessage = `${message}
+
+Please respond as SomBuddy, a friendly wine-pairing expert. Do not use markdown syntax in your response. Do not format with asterisks, headers, or hyphen bullets. Use plain text only. Structure your reply using line breaks, emoji (e.g., 🍷, ✅, 🚫), and natural spacing to guide the user visually. Keep responses clear, friendly, and beginner-safe.`;
         }
         
         await addMessageToThread(threadId, finalMessage, validatedImages);
