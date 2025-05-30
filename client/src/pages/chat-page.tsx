@@ -464,9 +464,9 @@ export default function ChatPage() {
       </div>
 
       <div
-        className="fixed left-2 right-2 z-20 bg-[#3f1b19] backdrop-blur-sm border border-gold/30 rounded-full p-2"
+        className="fixed left-0 right-0 z-20 bg-[#3f1b19] backdrop-blur-sm border-t border-gold/30 p-4"
         style={{ 
-          bottom: 'max(20px, calc(env(safe-area-inset-bottom) + 10px))'
+          bottom: 'max(0px, env(safe-area-inset-bottom))'
         }}
       >
         {tempImages.length > 0 && (
@@ -516,7 +516,7 @@ export default function ChatPage() {
             onImageSelect={handleImageSelect}
             className="text-gold hover:text-gold/80 p-2 self-center"
           />
-          <div className="flex-1 bg-[#3f1b19] text-[#ddc393] rounded-3xl overflow-hidden border border-gold/30">
+          <div className="flex-1 bg-[#3f1b19] text-[#ddc393] rounded-lg overflow-hidden border border-gold/30">
             <textarea
               ref={textareaRef}
               className="w-full bg-[#3f1b19] text-[#ddc393] placeholder:text-[#ddc393]/70 border-none px-4 py-3 focus:outline-none resize-none"
