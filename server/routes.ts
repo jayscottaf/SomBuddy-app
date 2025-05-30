@@ -600,7 +600,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         let finalMessage = message || "";
         
-        // If we have images, detect their types and generate appropriate prompts
+        // If we have images, detect their types and store context for the assistant
         if (validatedImages.length > 0) {
           console.log(`Processing ${validatedImages.length} images for intelligent analysis`);
           
@@ -613,9 +613,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const imageType = await detectImageType(firstImageUrl);
           console.log(`Detected image type: ${imageType}`);
           
-          // Generate contextual prompt based on image type
-          finalMessage = generateContextualPrompt(imageType, message);
-          console.log(`Generated contextual prompt for ${imageType}`);
+          // Store the image type in thread metadata for assistant context
+          // The user message remains as they typed it
+          finalMessage = message || `I've shared an image with you.`;
+          
+          // We'll use thread metadata to pass context to the assistant
+          req.body.imageContext = {
+            type: imageType,
+            url: firstImageUrl
+          };
         }
         
         await addMessageToThread(threadId, finalMessage, validatedImages);

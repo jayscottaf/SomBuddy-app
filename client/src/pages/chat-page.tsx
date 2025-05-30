@@ -391,11 +391,11 @@ export default function ChatPage() {
 
                 {((message.content.length > 0 && message.content[0]?.trim() !== "") || message.id === "processing") && (
                   <div
-                    className={`rounded-xl py-1.5 px-3 inline-block ${
+                    className={
                       message.role === "user"
-                        ? "bg-gold text-black rounded-tr-none ml-auto"
-                        : "bg-[#3f1b19] text-[#ddcaa1] rounded-tl-none border border-gold/30"
-                    }`}
+                        ? "bg-gold text-black rounded-xl py-1.5 px-3 inline-block rounded-tr-none ml-auto"
+                        : "w-full px-4 py-3 bg-[#3f1b19] text-[#ddcaa1] border border-gold/30 rounded-xl whitespace-pre-wrap break-words text-sm leading-relaxed space-y-2"
+                    }
                   >
                     {message.content.map((text, i) => {
                       // Check if text contains list-like formatting (bullets, numbers, etc.)
