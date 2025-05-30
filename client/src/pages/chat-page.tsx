@@ -16,7 +16,6 @@ interface Message {
 
 export default function ChatPage() {
   const [messages, setMessages] = useState<Message[]>([]);
-  const [mobileBottomSpacing, setMobileBottomSpacing] = useState(60);
   const [input, setInput] = useState("");
   const [threadId, setThreadId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -38,35 +37,6 @@ export default function ChatPage() {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
-
-  // Detect mobile platform and set appropriate bottom spacing
-  useEffect(() => {
-    const detectMobileSpacing = () => {
-      const userAgent = navigator.userAgent.toLowerCase();
-      const isIOS = /iphone|ipad|ipod/.test(userAgent);
-      const isAndroid = /android/.test(userAgent);
-      const isMobile = window.innerWidth <= 768;
-      
-      if (isMobile) {
-        if (isIOS) {
-          // iOS devices need more space for home indicator and safe area
-          setMobileBottomSpacing(140);
-        } else if (isAndroid) {
-          // Android gesture navigation with extra spacing
-          setMobileBottomSpacing(120);
-        } else {
-          // Generic mobile with safe spacing
-          setMobileBottomSpacing(110);
-        }
-      } else {
-        setMobileBottomSpacing(20);
-      }
-    };
-
-    detectMobileSpacing();
-    window.addEventListener('resize', detectMobileSpacing);
-    return () => window.removeEventListener('resize', detectMobileSpacing);
-  }, []);
 
   // Create a new thread
   const createThread = async () => {
@@ -557,7 +527,7 @@ export default function ChatPage() {
       <div
         className="fixed left-2 right-2 z-20 bg-[#3f1b19] backdrop-blur-sm border border-gold/30 rounded-full p-2"
         style={{ 
-          bottom: `${mobileBottomSpacing}px`
+          bottom: 'calc(env(safe-area-inset-bottom, 10px) + 10px)'
         }}
       >
         {/* Image previews (above input) */}
