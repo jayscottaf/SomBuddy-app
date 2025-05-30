@@ -1,9 +1,18 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
-import { setupVite, serveStatic, log } from "./vite";
-import * as fs from "fs";
+import { setupVite, serveStatic, log } from "./vite"; // Import setupVite and serveStatic
+
 
 const app = express();
+// Redirect www.sombuddy.ai → sombuddy.ai
+app.use((req, res, next) => {
+  const host = req.headers.host;
+  if (host && host.startsWith('www.')) {
+    const redirectUrl = `https://${host.replace(/^www\\./, '')}${req.url}`;
+    return res.redirect(301, redirectUrl);
+  }
+  next();
+});
 // Force production mode if running the built version
 if (process.env.NODE_ENV !== 'development') {
   process.env.NODE_ENV = 'production';
