@@ -393,8 +393,8 @@ export default function ChatPage() {
                   <div
                     className={
                       message.role === "user"
-                        ? "bg-gold text-black rounded-xl py-1.5 px-3 inline-block rounded-tr-none ml-auto"
-                        : "w-full px-4 py-3 bg-[#3f1b19] text-[#ddcaa1] border border-gold/30 rounded-xl whitespace-pre-wrap break-words text-sm leading-relaxed space-y-2"
+                        ? "rounded-xl py-1.5 px-3 inline-block bg-gold text-black rounded-tr-none ml-auto"
+                        : "px-4 py-3 bg-[#3f1b19] text-[#ddcaa1] border border-gold/30 rounded-xl whitespace-pre-wrap break-words text-sm leading-relaxed space-y-2 w-full"
                     }
                   >
                     {message.content.map((text, i) => {
