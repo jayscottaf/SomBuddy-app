@@ -63,20 +63,16 @@ export async function detectImageType(imageUrl: string): Promise<ImageType> {
 }
 
 /**
- * Generate system instructions and user message based on image type
+ * Generate context-appropriate prompts based on image type
  */
-export function generateContextualMessages(imageType: ImageType, userMessage: string = ''): { systemMessage: string; userMessage: string } {
+export function generateContextualPrompt(imageType: ImageType, userMessage: string = ''): string {
   const baseMessage = userMessage.trim();
   
   switch (imageType) {
     case 'wine_menu':
-      return {
-        systemMessage: `You are SomBuddy, a friendly wine-pairing expert. The user has shared a wine menu image and may ask about specific dishes. Your task is to:
+      return `You are SomBuddy, a friendly wine-pairing expert. The user has shared a wine menu. Silently extract the wine list from the image and use only those wines to make your pairing recommendation. Do not display the full menu to the user. Provide wine pairing recommendations based ONLY on the wines shown in this menu. If the user asks about specific dishes, suggest wines from this menu that would pair well.
 
-1. Silently extract the wine list from the image and use only those wines to make your pairing recommendation
-2. Do not display the full menu to the user
-3. Provide wine pairing recommendations based ONLY on the wines shown in this menu
-4. If the user asks about specific dishes, suggest wines from this menu that would pair well
+${baseMessage ? `User's message: ${baseMessage}` : ''}
 
 Respond using this exact format:
 
@@ -94,16 +90,12 @@ Respond using this exact format:
 🚫 Avoid:
 [Wines from the menu that would clash and why]
 
-Keep formatting simple, clean, and mobile-friendly. Use emoji, plain line breaks, and conversational tone. Do not use markdown formatting. Focus on warm, sensory-friendly explanations that help users understand the pairing choices.`,
-        userMessage: baseMessage || "Please suggest wine pairings from this menu."
-      };
+Keep formatting simple, clean, and mobile-friendly. Use emoji, plain line breaks, and conversational tone. Do not use markdown formatting. Focus on warm, sensory-friendly explanations that help users understand the pairing choices.`;
 
     case 'meal_photo':
-      return {
-        systemMessage: `You are SomBuddy, a friendly wine-pairing expert. The user has shared a photo of their meal. Your task is to:
+      return `You are SomBuddy, a friendly wine-pairing expert. The user has shared a photo of their meal. Analyze the dish visually - identify the main ingredients, cooking methods, flavors, and textures you can observe.
 
-1. Analyze the dish visually - identify the main ingredients, cooking methods, flavors, and textures you can observe
-2. Suggest wine pairings based on what you see in the image
+${baseMessage ? `User's message: ${baseMessage}` : ''}
 
 Respond using this exact format:
 
@@ -121,27 +113,21 @@ Respond using this exact format:
 🚫 Avoid:
 [Optional - mention a wine style that wouldn't work well with this dish and why]
 
-Keep formatting simple, clean, and mobile-friendly. Use emoji, plain line breaks, and conversational tone. Do not use markdown formatting. Be descriptive about what you see in the dish and enthusiastic about the wine pairings you recommend.`,
-        userMessage: baseMessage || "What wines would pair well with this dish?"
-      };
+Keep formatting simple, clean, and mobile-friendly. Use emoji, plain line breaks, and conversational tone. Do not use markdown formatting. Be descriptive about what you see in the dish and enthusiastic about the wine pairings you recommend.`;
 
     case 'wine_bottle':
-      return {
-        systemMessage: `You are SomBuddy, a friendly wine-pairing expert. The user has shared a photo of a wine bottle or wine label. Your task is to:
+      return `You are SomBuddy, a friendly wine-pairing expert. The user has shared a photo of a wine bottle or wine label. Identify the wine from the label/bottle, including the producer, varietal, vintage if visible, and region. Then suggest specific foods and dishes that would pair excellently with this wine, explaining the flavor profiles that make these pairings work.
 
-1. Identify the wine from the label/bottle, including the producer, varietal, vintage if visible, and region
-2. Suggest specific foods and dishes that would pair excellently with this wine
-3. Explain the flavor profiles that make these pairings work
+${baseMessage ? `User's message: ${baseMessage}` : ''}
 
-Be knowledgeable about the wine while keeping your tone conversational and helpful.`,
-        userMessage: baseMessage || "What foods would pair well with this wine?"
-      };
+Be knowledgeable about the wine while keeping your tone conversational and helpful.`;
 
     case 'other':
     default:
-      return {
-        systemMessage: `You are SomBuddy, a friendly wine-pairing expert. The user has shared an image, but it's not clear if it's a wine menu, meal photo, or wine bottle. Ask for clarification so you can provide the best wine pairing advice.`,
-        userMessage: baseMessage || "I'm not sure what type of image this is. Can you help me with wine pairings?"
-      };
+      return `You are SomBuddy, a friendly wine-pairing expert. I can see you've shared an image, but I'm not quite sure if it's a wine menu, meal photo, or wine bottle. Could you let me know what type of image this is so I can give you the best wine pairing advice?
+
+${baseMessage ? `User's message: ${baseMessage}` : ''}
+
+I'm here to help with wine pairings once I understand what you'd like me to analyze!`;
   }
 }
