@@ -19,6 +19,7 @@ export default function ChatPage() {
   const [input, setInput] = useState("");
   const [threadId, setThreadId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [inputBottomOffset, setInputBottomOffset] = useState(20);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
@@ -37,6 +38,58 @@ export default function ChatPage() {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
+
+  // Detect mobile safe areas and set appropriate bottom offset
+  useEffect(() => {
+    const calculateBottomOffset = () => {
+      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+      const isAndroid = /Android/.test(navigator.userAgent);
+      const isMobile = window.innerWidth <= 768 || window.innerHeight <= 768;
+      
+      // Check if we have access to CSS environment variables
+      const testElement = document.createElement('div');
+      testElement.style.height = 'env(safe-area-inset-bottom, 0px)';
+      document.body.appendChild(testElement);
+      const computedHeight = window.getComputedStyle(testElement).height;
+      document.body.removeChild(testElement);
+      
+      let offset = 20; // Default desktop
+      
+      if (isMobile) {
+        if (isIOS) {
+          // For iOS, try to get the safe area or use known values
+          if (computedHeight !== '0px' && computedHeight !== 'env(safe-area-inset-bottom, 0px)') {
+            offset = parseInt(computedHeight) + 20;
+          } else {
+            // Fallback for iOS devices
+            const hasHomeIndicator = window.screen.height >= 812; // iPhone X and newer
+            offset = hasHomeIndicator ? 54 : 30; // 34px safe area + 20px padding or just padding
+          }
+        } else if (isAndroid) {
+          // Android with gesture navigation
+          offset = 40;
+        } else {
+          // Generic mobile
+          offset = 30;
+        }
+      }
+      
+      setInputBottomOffset(offset);
+    };
+
+    calculateBottomOffset();
+    
+    // Recalculate on orientation change or resize
+    window.addEventListener('resize', calculateBottomOffset);
+    window.addEventListener('orientationchange', () => {
+      setTimeout(calculateBottomOffset, 500); // Delay for orientation change
+    });
+    
+    return () => {
+      window.removeEventListener('resize', calculateBottomOffset);
+      window.removeEventListener('orientationchange', calculateBottomOffset);
+    };
+  }, []);
 
   // Create a new thread
   const createThread = async () => {
@@ -368,7 +421,7 @@ export default function ChatPage() {
       {/* Messages container - scrollable area between fixed header and input */}
       <div 
         className="flex-1 overflow-y-auto p-4 bg-merlot pt-20"
-        style={{ paddingBottom: 'calc(160px + env(safe-area-inset-bottom, 0px))' }}
+        style={{ paddingBottom: `${inputBottomOffset + 140}px` }}
       >
         <div className="flex flex-col space-y-4">
           {messages.map((message, index) => (
@@ -527,7 +580,7 @@ export default function ChatPage() {
       <div
         className="fixed left-2 right-2 z-20 bg-[#3f1b19] backdrop-blur-sm border border-gold/30 rounded-full p-2"
         style={{ 
-          bottom: 'calc(env(safe-area-inset-bottom, 10px) + 10px)'
+          bottom: `${inputBottomOffset}px`
         }}
       >
         {/* Image previews (above input) */}
