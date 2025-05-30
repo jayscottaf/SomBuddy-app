@@ -244,6 +244,41 @@ export default function ChatPage() {
     },
   });
 
+  // Mobile safe area detection
+  const [inputBottomOffset, setInputBottomOffset] = useState(20);
+
+  useEffect(() => {
+    const updateInputOffset = () => {
+      // Check if we're on iOS
+      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+      
+      // Check for safe area support
+      const supportsEnvConstants = CSS.supports('padding-bottom: env(safe-area-inset-bottom)');
+      
+      if (isIOS && supportsEnvConstants) {
+        // For iOS devices with safe areas (iPhone X and newer)
+        setInputBottomOffset(34 + 20); // Safe area (34px) + padding (20px)
+      } else if (window.innerHeight < 700) {
+        // For smaller screens or Android with gesture navigation
+        setInputBottomOffset(30);
+      } else {
+        // Default spacing for other devices
+        setInputBottomOffset(20);
+      }
+    };
+
+    updateInputOffset();
+    
+    // Update on orientation change
+    window.addEventListener('orientationchange', updateInputOffset);
+    window.addEventListener('resize', updateInputOffset);
+    
+    return () => {
+      window.removeEventListener('orientationchange', updateInputOffset);
+      window.removeEventListener('resize', updateInputOffset);
+    };
+  }, []);
+
   // Send a message
   const sendMessage = () => {
     if (!input.trim() && tempImages.length === 0) return;
@@ -340,7 +375,12 @@ export default function ChatPage() {
       </div>
 
       {/* Messages container - scrollable area between fixed header and input */}
-      <div className="flex-1 overflow-y-auto p-4 bg-merlot pb-20 pt-20">
+      <div 
+        className="flex-1 overflow-y-auto p-4 bg-merlot pt-20"
+        style={{ 
+          paddingBottom: `${inputBottomOffset + 80}px` // Input height + offset + extra spacing
+        }}
+      >
         <div className="flex flex-col space-y-4">
           {messages.map((message, index) => (
             <div
@@ -459,8 +499,13 @@ export default function ChatPage() {
         </div>
       </div>
 
-      {/* Input area - fixed at bottom */}
-      <div className="p-3 border-t border-zinc-800 bg-black/40 backdrop-blur-lg fixed bottom-0 left-0 right-0 z-20">
+      {/* Input area - fixed at bottom with safe area spacing */}
+      <div 
+        className="p-3 border-t border-zinc-800 bg-black/40 backdrop-blur-lg fixed left-0 right-0 z-20"
+        style={{ 
+          bottom: `${inputBottomOffset}px`
+        }}
+      >
         {/* Display images to be sent - as thumbnails */}
         {tempImages.length > 0 && (
           <div className="mb-4">
