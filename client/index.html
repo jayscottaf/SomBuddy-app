@@ -1,75 +1,28 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta
-      name="viewport"
-      content="width=device-width, initial-scale=1.0, viewport-fit=cover"
-    />
-    <meta
-      name="description"
-      content="SomBuddy - Your friendly wine-pairing guide."
-    />
-    <meta
-      name="keywords"
-      content="wine pairing, sommelier, food and wine, wine recommendations, wine pairing guide, wine pairing app, wine pairing assistant, wine pairing AI, wine pairing tool, wine pairing software, wine pairing service,  wine pairing app, wine pairing website, wine pairing chatbot, wine pairing bot, wine pairing chat, wine pairing conversation, wine pairing conversation app, wine pairing conversation website, wine pairing conversation chatbot, wine pairing conversation bot, wine pairing conversation  chat, wine pairing conversation conversation"
-    />
-    <meta name="author" content="SomBuddy" />
-    <meta name="robots" content="index, follow" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no" />
     <meta name="theme-color" content="#000000" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <meta
-      name="apple-mobile-web-app-status-bar-style"
-      content="black-translucent"
-    />
-    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="mobile-web-app-capable" content="yes" />
     <link rel="icon" type="image/png" href="/icons/icon-512.png" />
     <link rel="manifest" href="/manifest.json" />
     <link rel="apple-touch-icon" href="/icons/icon-192.png" />
     <title>SomBuddy</title>
-    <meta name="theme-color" content="#000000" />
-    <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta
-      name="apple-mobile-web-app-status-bar-style"
-      content="black-translucent"
-    />
-    <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="mobile-web-app-capable" content="yes" />
-    <link rel="icon" type="image/png" href="/icons/icon-512.png" />
-    <link rel="manifest" href="/manifest.json" />
-    <link rel="apple-touch-icon" href="/icons/icon-192.png" />
-    <title>SomBuddy</title>
-    <style>
-      :root {
-        --safe-area-inset-bottom: env(safe-area-inset-bottom, 0px);
-      }
-      
-      /* Ensure proper viewport height handling */
-      html, body {
-        height: 100%;
-        overflow-x: hidden;
-      }
-      
-      /* iOS safe area support */
-      @supports (padding: max(0px)) {
-        .safe-bottom {
-          padding-bottom: max(34px, env(safe-area-inset-bottom));
-        }
-      }
-    </style>
   </head>
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
     <script>
-      if (location.hostname.includes("replit.dev")) {
-        const script = document.createElement("script");
-        script.src = "https://replit.com/public/js/replit-dev-banner.js";
+      if (location.hostname.includes('replit.dev')) {
+        const script = document.createElement('script');
+        script.src = 'https://replit.com/public/js/replit-dev-banner.js';
         script.defer = true;
         document.body.appendChild(script);
       }
     </script>
   </body>
-</html>
+  </html>
