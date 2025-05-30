@@ -74,6 +74,11 @@ export function generateContextualPrompt(imageType: ImageType, userMessage: stri
 
 ${baseMessage ? `User's message: ${baseMessage}` : ''}
 
+Structure your response as follows:
+1. Recommend the best wine pairing from the menu
+2. Suggest 1-2 alternate options if available (lighter or more adventurous choices)
+3. End with a "Wines to Avoid" section listing specific wines from the menu that would clash with the dish, with brief explanations why (due to tannins, acidity, sweetness, or intensity conflicts)
+
 Please be conversational and friendly while being informative about wine pairings. Focus on giving clear pairing suggestions with warm, sensory-friendly explanations.`;
 
     case 'meal_photo':
