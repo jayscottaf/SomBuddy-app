@@ -19,6 +19,8 @@ export default function ChatPage() {
   const [input, setInput] = useState("");
   const [threadId, setThreadId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [menuUploadTimestamp, setMenuUploadTimestamp] = useState<number | null>(null);
+  const [messageCountSinceMenuUpload, setMessageCountSinceMenuUpload] = useState(0);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
@@ -138,11 +140,13 @@ export default function ChatPage() {
     mutationFn: async ({ 
       message, 
       imageData, 
-      imageDataArray 
+      imageDataArray,
+      metadata 
     }: { 
       message: string; 
       imageData?: string;
       imageDataArray?: string[];
+      metadata?: { useMenu: boolean };
     }) => {
       if (!threadId) throw new Error("No thread ID");
 
@@ -151,6 +155,7 @@ export default function ChatPage() {
         message,
         imageData,
         imageDataArray,
+        metadata,
       });
 
       if (!response.ok) {
@@ -273,16 +278,27 @@ export default function ChatPage() {
 
     setMessages((prev) => [...prev, processingMessage]);
 
+    // Increment message count since menu upload
+    setMessageCountSinceMenuUpload(prev => prev + 1);
+
     // Clear the input and images BEFORE sending the API request
     // This ensures the UI is ready for another image immediately
     setInput("");
     setTempImages([]);
 
-    // Send the message with all images to the API
+    // Determine if we should use wine menu context
+    const useMenu = menuUploadTimestamp && 
+                   Date.now() - menuUploadTimestamp < 15 * 60 * 1000 && 
+                   messageCountSinceMenuUpload < 5;
+
+    // Send the message with all images and metadata to the API
     try {
       sendMessageMutation.mutate({
         message: currentInput,
         imageDataArray: currentImages.length > 0 ? currentImages : undefined,
+        metadata: {
+          useMenu,
+        },
       });
     } catch (error) {
       console.error("Error preparing to send message:", error);
@@ -319,6 +335,9 @@ export default function ChatPage() {
   const handleImageSelect = (file: File, preview: string) => {
     // Add the new image to the array
     setTempImages(prevImages => [...prevImages, preview]);
+    // Track wine menu upload for context-aware handling
+    setMenuUploadTimestamp(Date.now());
+    setMessageCountSinceMenuUpload(0);
     // No toast notification needed - the image preview is visible
   };
 
