@@ -557,14 +557,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Send a message to the assistant
   app.post("/api/assistant/message", async (req: Request, res: Response) => {
-    let systemInstructions = null;
-
+    try {
+      const { threadId, message, imageData, imageDataArray } = req.body;
+      
+      if (!threadId) {
+        return res.status(400).json({ message: "Thread ID is required" });
+      }
+      
+      // Support both single imageData and multiple imageDataArray
+      const images = imageDataArray || (imageData ? [imageData] : []);
+      
+      if (!message && images.length === 0) {
+        return res.status(400).json({ message: "Message or at least one image is required" });
+      }
+      
+      // Process and validate all image data
+      const validatedImages: string[] = [];
+      for (const img of images) {
         try {
-          // Add the message to the thread with intelligent image analysis
-          console.log(`Adding message to thread ${threadId}`);
-
-          let finalMessage = message || "";
-          let imageContext = null;
+          if (!img) continue;
+          
+          const imageSizeKB = Math.round(img.length / 1024);
+          console.log(`Processing image of approximately ${imageSizeKB}KB`);
+          
+          // Check if image data is too large (OpenAI limit is ~20MB, but we'll be more conservative)
+          if (imageSizeKB > 5000) { // 5MB limit
+            return res.status(413).json({ 
+              message: "Image is too large. Please use a smaller image (maximum 5MB)." 
+            });
+          }
+          
+          validatedImages.push(img);
+        } catch (imgError) {
+          console.error("Error processing image data:", imgError);
+          // Continue with other images rather than failing completely
+        }
+      }
+      
+      try {
+        // Add the message to the thread 
+        console.log(`Adding message to thread ${threadId}`);
+        
+        let finalMessage = message || "";
+        let imageContext = null;
 
           // If we have images, detect their types and generate system instructions
           if (validatedImages.length > 0) {
@@ -651,38 +686,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
           error: messageError instanceof Error ? messageError.message : String(messageError) 
         });
       }
-
-      const { threadId, message, imageData, imageDataArray } = req.body;
-
-      if (!threadId) {
-        return res.status(400).json({ message: "Thread ID is required" });
-      }
-
-      // Support both single imageData and multiple imageDataArray
-      const images = imageDataArray || (imageData ? [imageData] : []);
-
-      if (!message && images.length === 0) {
-        return res.status(400).json({ message: "Message or at least one image is required" });
-      }
-
-      // Process and validate all image data only if images exist
-      const validatedImages: string[] = [];
-      if (images.length > 0) {
-        for (const img of images) {
-          try {
-            if (!img) continue;
-
-            const imageSizeKB = Math.round(img.length / 1024);
-            console.log(`Processing image of approximately ${imageSizeKB}KB`);
-
-            // Check if image data is too large (OpenAI limit is ~20MB, but we'll be more conservative)
-            if (imageSizeKB > 5000) { // 5MB limit
-              return res.status(413).json({ 
-                message: "Image is too large. Please use a smaller image (maximum 5MB)." 
-              });
-            }
-
-            validatedImages.push(img);
           } catch (imgError) {
             console.error("Error processing image data:", imgError);
             // Continue with other images rather than failing completely
