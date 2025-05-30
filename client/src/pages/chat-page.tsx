@@ -244,40 +244,7 @@ export default function ChatPage() {
     },
   });
 
-  // Mobile safe area detection
-  const [inputBottomOffset, setInputBottomOffset] = useState(20);
-
-  useEffect(() => {
-    const updateInputOffset = () => {
-      // Check if we're on iOS
-      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-      
-      // Check for safe area support
-      const supportsEnvConstants = CSS.supports('padding-bottom: env(safe-area-inset-bottom)');
-      
-      if (isIOS && supportsEnvConstants) {
-        // For iOS devices with safe areas (iPhone X and newer)
-        setInputBottomOffset(34 + 20); // Safe area (34px) + padding (20px)
-      } else if (window.innerHeight < 700) {
-        // For smaller screens or Android with gesture navigation
-        setInputBottomOffset(30);
-      } else {
-        // Default spacing for other devices
-        setInputBottomOffset(20);
-      }
-    };
-
-    updateInputOffset();
-    
-    // Update on orientation change
-    window.addEventListener('orientationchange', updateInputOffset);
-    window.addEventListener('resize', updateInputOffset);
-    
-    return () => {
-      window.removeEventListener('orientationchange', updateInputOffset);
-      window.removeEventListener('resize', updateInputOffset);
-    };
-  }, []);
+  
 
   // Send a message
   const sendMessage = () => {
@@ -378,7 +345,7 @@ export default function ChatPage() {
       <div 
         className="flex-1 overflow-y-auto p-4 bg-merlot pt-20"
         style={{ 
-          paddingBottom: `${inputBottomOffset + 80}px` // Input height + offset + extra spacing
+          paddingBottom: `calc(100px + env(safe-area-inset-bottom, 20px))` // Input height + safe area
         }}
       >
         <div className="flex flex-col space-y-4">
@@ -503,7 +470,7 @@ export default function ChatPage() {
       <div 
         className="p-3 border-t border-zinc-800 bg-black/40 backdrop-blur-lg fixed left-0 right-0 z-20"
         style={{ 
-          bottom: `${inputBottomOffset}px`
+          bottom: `calc(env(safe-area-inset-bottom, 0px) + 20px)`
         }}
       >
         {/* Display images to be sent - as thumbnails */}
