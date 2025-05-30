@@ -580,7 +580,7 @@ export default function ChatPage() {
       <div
         className="fixed left-2 right-2 z-20 bg-[#3f1b19] backdrop-blur-sm border border-gold/30 rounded-full p-2"
         style={{ 
-          bottom: 'clamp(80px, 15vh, 120px)'
+          bottom: `${inputBottomOffset}px`
         }}
       >
         {/* Image previews (above input) */}
