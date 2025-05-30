@@ -603,7 +603,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         let finalMessage = message || "";
         let imageContext = null;
         
-        // If we have images, detect their types and store context for the assistant
+        // If we have images, detect their types and generate contextual prompt
         if (validatedImages.length > 0) {
           console.log(`Processing ${validatedImages.length} images for intelligent analysis`);
           
@@ -617,11 +617,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
             const imageType = await detectImageType(firstImageUrl);
             console.log(`Detected image type: ${imageType}`);
             
-            // Store the image type in thread metadata for assistant context
-            // The user message remains as they typed it
-            finalMessage = message || `I've shared an image with you.`;
+            // Generate contextual prompt for the assistant using the detected image type
+            finalMessage = generateContextualPrompt(imageType, message || "");
             
-            // We'll use thread metadata to pass context to the assistant
+            // Store image context for potential future use
             imageContext = {
               type: imageType,
               url: firstImageUrl
@@ -632,9 +631,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             // If image upload fails, continue with text-only message if available
             if (message && message.trim()) {
               console.log("Image upload failed, proceeding with text-only message");
-              finalMessage = `${message}
-
-Please respond as SomBuddy, a friendly wine-pairing expert. Do not use markdown syntax in your response. Do not format with asterisks, headers, or hyphen bullets. Use plain text only. Structure your reply using line breaks, emoji (e.g., 🍷, ✅, 🚫), and natural spacing to guide the user visually. Keep responses clear, friendly, and beginner-safe.`;
+              finalMessage = message;
               // Clear images array since upload failed
               validatedImages.length = 0;
             } else {
@@ -646,10 +643,9 @@ Please respond as SomBuddy, a friendly wine-pairing expert. Do not use markdown 
             }
           }
         } else if (message) {
-          // For text-only messages, add formatting instructions
-          finalMessage = `${message}
-
-Please respond as SomBuddy, a friendly wine-pairing expert. Do not use markdown syntax in your response. Do not format with asterisks, headers, or hyphen bullets. Use plain text only. Structure your reply using line breaks, emoji (e.g., 🍷, ✅, 🚫), and natural spacing to guide the user visually. Keep responses clear, friendly, and beginner-safe.`;
+          // For text-only messages, use the message as-is
+          // The assistant system prompt already contains behavior instructions
+          finalMessage = message;
         }
         
         // Store image context if we have it
