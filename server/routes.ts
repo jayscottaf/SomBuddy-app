@@ -26,7 +26,8 @@ import {
 import { generateMealPlan } from "./services/meal-service";
 import { generateWorkoutPlan } from "./services/workout-service";
 import { analyzeMealImage } from "./services/image-analysis-service";
-import { detectImageType, generateContextualPrompt } from "./services/image-detection-service";
+import { detectImageType } from "./services/image-detection-service";
+import { getAssistantInstructions, getGeneralWinePairingInstructions } from "./services/assistant-instructions";
 
 declare module "express-session" {
   interface SessionData {
@@ -617,13 +618,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
             const imageType = await detectImageType(firstImageUrl);
             console.log(`Detected image type: ${imageType}`);
             
-            // Generate contextual prompt for the assistant using the detected image type
-            finalMessage = generateContextualPrompt(imageType, message || "");
+            // Keep the user message clean - only what they actually typed
+            finalMessage = message || "";
             
-            // Store image context for potential future use
+            // Store image context with assistant instructions for the run
             imageContext = {
               type: imageType,
-              url: firstImageUrl
+              url: firstImageUrl,
+              instructions: getAssistantInstructions(imageType, firstImageUrl)
             };
           } catch (imageUploadError) {
             console.error("Error uploading images to Cloudinary:", imageUploadError);
@@ -687,11 +689,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
-      // Run the assistant on the thread
+      // Run the assistant on the thread with appropriate instructions
       console.log(`Running assistant on thread ${threadId}`);
       let run;
       try {
-        run = await runAssistantOnThread(threadId);
+        // Determine what instructions to use
+        let instructions = "";
+        if (imageContext && imageContext.instructions) {
+          instructions = imageContext.instructions;
+          console.log(`Using image-specific instructions for type: ${imageContext.type}`);
+        } else {
+          instructions = getGeneralWinePairingInstructions();
+          console.log("Using general wine pairing instructions");
+        }
+        
+        run = await runAssistantOnThread(threadId, 'asst_hHy68PuBx0Z44uF9cAna4oJD', instructions);
         console.log(`Run created with ID: ${run.id}`);
       } catch (runError) {
         console.error("Error running assistant:", runError);

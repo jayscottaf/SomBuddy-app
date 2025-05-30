@@ -1,5 +1,7 @@
 import fetch from 'node-fetch';
 import { uploadImageToCloudinary } from './cloudinary-service';
+import { getAssistantInstructions, getGeneralWinePairingInstructions } from './assistant-instructions';
+import { ImageType } from './image-detection-service';
 
 // API endpoint for OpenAI API proxying
 export const OPENAI_API_BASE = 'https://api.openai.com';
@@ -187,17 +189,25 @@ export async function addMessageToThread(
   }
 }
 
-// Run the assistant on a thread
+// Run the assistant on a thread with optional additional instructions
 export async function runAssistantOnThread(
   threadId: string, 
-  assistantId: string = 'asst_hHy68PuBx0Z44uF9cAna4oJD'
+  assistantId: string = 'asst_hHy68PuBx0Z44uF9cAna4oJD',
+  additionalInstructions?: string
 ) {
+  const runBody: any = {
+    assistant_id: assistantId
+  };
+  
+  // Add additional instructions if provided
+  if (additionalInstructions) {
+    runBody.additional_instructions = additionalInstructions;
+  }
+  
   const response = await proxyRequestToOpenAI(
     'POST',
     `/v1/threads/${threadId}/runs`,
-    {
-      assistant_id: assistantId
-    }
+    runBody
   );
   
   if (response.status !== 200) {
