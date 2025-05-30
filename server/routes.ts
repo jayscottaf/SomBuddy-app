@@ -558,7 +558,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Send a message to the assistant
   app.post("/api/assistant/message", async (req: Request, res: Response) => {
     try {
-      const { threadId, message, imageData, imageDataArray, metadata } = req.body;
+      const { threadId, message, imageData, imageDataArray } = req.body;
       
       if (!threadId) {
         return res.status(400).json({ message: "Thread ID is required" });
@@ -617,14 +617,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             const imageType = await detectImageType(firstImageUrl);
             console.log(`Detected image type: ${imageType}`);
             
-            // Check if we should use menu context
-            const shouldUseMenuContext = metadata?.useMenu === true;
-            console.log(`Should use menu context: ${shouldUseMenuContext}`);
-            
             // Generate contextual prompt for the assistant using the detected image type
-            // If this is a wine menu but we shouldn't use menu context, treat as general image
-            const effectiveImageType = (imageType === 'wine_menu' && !shouldUseMenuContext) ? 'other' : imageType;
-            finalMessage = generateContextualPrompt(effectiveImageType, message || "");
+            finalMessage = generateContextualPrompt(imageType, message || "");
             
             // Store image context for potential future use
             imageContext = {

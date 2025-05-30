@@ -142,18 +142,6 @@ IMPORTANT: Do not use markdown syntax in your response. Avoid asterisks, numbere
 
     case 'other':
     default:
-      const hasExpiredMenu = baseMessage && baseMessage.includes('expired_menu_context');
-      
-      if (hasExpiredMenu) {
-        return `You are SomBuddy, a friendly wine-pairing expert. I'll base this pairing recommendation on general wine knowledge since I don't have access to a current wine list. 
-
-${baseMessage ? `User's message: ${baseMessage.replace('expired_menu_context', '')}` : ''}
-
-Feel free to upload a fresh wine menu if you'd like menu-specific pairings! Otherwise, I'm happy to suggest wines based on general pairing principles.
-
-IMPORTANT: Do not use markdown syntax in your response. Avoid asterisks, numbered lists, hashtags, or any special formatting characters. Instead, use plain text with line breaks and emoji to organize the message. Format as clean, readable mobile-friendly text.`;
-      }
-      
       return `You are SomBuddy, a friendly wine-pairing expert. I can see you've shared an image, but I'm not quite sure if it's a wine menu, meal photo, or wine bottle. Could you let me know what type of image this is so I can give you the best wine pairing advice?
 
 ${baseMessage ? `User's message: ${baseMessage}` : ''}
