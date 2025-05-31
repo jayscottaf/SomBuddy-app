@@ -164,33 +164,39 @@ export async function addMessageToThread(
   }
 
   // Detect image type and generate contextual prompt
-  if (imagesToProcess.length > 0) {
-    const imageType = await detectImageType(imageUrl);
+  if (imagesToProcess.length > 0 && messageContent.some(item => item.type === "image_url")) {
+    // Get the first successfully uploaded image URL for analysis
+    const firstImageContent = messageContent.find(item => item.type === "image_url");
+    if (firstImageContent && firstImageContent.image_url?.url) {
+      const firstImageUrl = firstImageContent.image_url.url;
+      
+      const imageType = await detectImageType(firstImageUrl);
 
-    // Generate contextual prompt based on image type
-    let contextualPrompt = generateContextualPrompt(imageType, content);
+      // Generate contextual prompt based on image type
+      let contextualPrompt = generateContextualPrompt(imageType, content);
 
-    // For wine menus, perform detailed OCR analysis
-    if (imageType === 'wine_menu') {
-      try {
-        const wineMenuAnalysis = await analyzeWineMenu(imageUrl);
-        const formattedWineList = formatWineMenuForDisplay(wineMenuAnalysis);
+      // For wine menus, perform detailed OCR analysis
+      if (imageType === 'wine_menu') {
+        try {
+          const wineMenuAnalysis = await analyzeWineMenu(firstImageUrl);
+          const formattedWineList = formatWineMenuForDisplay(wineMenuAnalysis);
 
-        contextualPrompt = `You are SomBuddy, a friendly wine-pairing expert. I've performed detailed OCR analysis of this wine menu. Here are ALL the wines available:
+          contextualPrompt = `You are SomBuddy, a friendly wine-pairing expert. I've performed detailed OCR analysis of this wine menu. Here are ALL the wines available:
 
 ${formattedWineList}
 
 ${content ? `User's message: ${content}` : ''}
 
 Please provide wine pairing recommendations based ONLY on the wines listed above. Be conversational and friendly while being informative about wine pairings.`;
-      } catch (error) {
-        console.error('Wine menu OCR failed, using standard prompt:', error);
-        // Fall back to standard contextual prompt
+        } catch (error) {
+          console.error('Wine menu OCR failed, using standard prompt:', error);
+          // Fall back to standard contextual prompt
+        }
       }
-    }
 
-    // Add the contextual prompt to the user's message
-    content = contextualPrompt;
+      // Add the contextual prompt to the user's message
+      content = contextualPrompt;
+    }
   }
 
   if (messageContent.length === 0 && (!content || content.trim() === '')) {
