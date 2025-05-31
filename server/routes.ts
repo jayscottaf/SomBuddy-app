@@ -1,43 +1,32 @@
-import { Express, Request, Response, NextFunction } from "express";
-import { Server } from "http";
-import { db } from "./db";
-import { users, nutritionLogs, workoutLogs, healthLogs, dailyPlans } from "@db/schema";
-import { 
-  registerSchema, 
-  loginSchema, 
-  insertNutritionLogSchema,
-  insertWorkoutLogSchema, 
-  insertHealthLogSchema,
-  insertDailyPlanSchema 
-} from "@db/schema";
-import bcrypt from "bcryptjs";
-import { eq, desc, and, gte, lt } from "drizzle-orm";
+import type { Express, Request, Response } from "express";
+import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { generateMealPlan } from "./services/meal-service";
-import { generateWorkoutPlan } from "./services/workout-service";
-import { calculateTDEE, calculateMacros } from "./services/tdee-service";
+import session from "express-session";
+import bcrypt from "bcryptjs";
+import { z } from "zod";
+import { registerSchema, loginSchema, onboardingSchema } from "@shared/schema";
+import fetch from "node-fetch";
+import { 
+  calculateTDEE, 
+  calculateMacros 
+} from "./services/tdee-service";
 import { 
   processOnboardingMessage, 
-  generateDailyMotivation, 
+  generateDailyMotivation,
   processFeedback,
-  OnboardingQuestion 
+  type OnboardingQuestion 
 } from "./services/openai-service";
-import { analyzeMealImage } from "./services/image-analysis-service";
-import { 
-  getOrCreateThread, 
-  addMessageToThread, 
-  runAssistantOnThread, 
-  checkRunStatus, 
-  getMessagesFromThread 
+import {
+  getOrCreateThread,
+  addMessageToThread,
+  runAssistantOnThread,
+  checkRunStatus,
+  getMessagesFromThread
 } from "./services/assistant-service";
-
-interface SessionData {
-  userId: number;
-  onboarding?: {
-    currentQuestion: OnboardingQuestion;
-    userData: any;
-  };
-}
+import { generateMealPlan } from "./services/meal-service";
+import { generateWorkoutPlan } from "./services/workout-service";
+import { analyzeMealImage } from "./services/image-analysis-service";
+import { detectImageType, generateContextualPrompt } from "./services/image-detection-service";
 
 declare module "express-session" {
   interface SessionData {
@@ -50,62 +39,103 @@ declare module "express-session" {
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Authentication routes
+  // Setup session middleware with PostgreSQL store
+  app.use(
+    session({
+      store: storage.sessionStore,
+      secret: process.env.SESSION_SECRET || "layover-fuel-secret",
+      resave: false,
+      saveUninitialized: false,
+      cookie: {
+        secure: process.env.NODE_ENV === "production",
+        maxAge: 1000 * 60 * 60 * 24 * 7, // 1 week
+      },
+    })
+  );
+
+  // Auth Routes
   app.post("/api/auth/register", async (req: Request, res: Response) => {
     try {
-      const validatedData = registerSchema.parse(req.body);
+      const data = registerSchema.parse(req.body);
       
       // Check if user already exists
-      const existingUser = await storage.getUserByEmail(validatedData.email);
+      const existingUser = await storage.getUserByEmail(data.email);
       if (existingUser) {
         return res.status(400).json({ message: "User already exists" });
       }
-
+      
       // Hash password
-      const hashedPassword = await bcrypt.hash(validatedData.password, 10);
-
+      const salt = await bcrypt.genSalt(10);
+      const hashedPassword = await bcrypt.hash(data.password, salt);
+      
       // Create user
-      const newUser = await storage.createUser({
-        email: validatedData.email,
+      const user = await storage.createUser({
+        email: data.email,
         password: hashedPassword,
-        name: validatedData.name,
+        name: "",
       });
-
-      // Set session
-      req.session.userId = newUser.id;
-
-      res.status(201).json({
-        message: "User registered successfully",
-        user: { id: newUser.id, email: newUser.email, name: newUser.name }
-      });
+      
+      // Start onboarding
+      req.session.userId = user.id;
+      req.session.onboarding = {
+        currentQuestion: {
+          text: "Hi there! I'm your Layover Fuel fitness coach. I'll help you stay fit while traveling. Let's get to know each other better. What's your name?",
+          field: "name",
+        },
+        userData: {},
+      };
+      
+      res.status(201).json({ message: "User created", userId: user.id });
     } catch (error) {
-      console.error("Registration error:", error);
-      res.status(400).json({ message: "Invalid registration data" });
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid input", errors: error.errors });
+      }
+      res.status(500).json({ message: "Server error" });
     }
   });
 
   app.post("/api/auth/login", async (req: Request, res: Response) => {
     try {
-      const { email, password } = loginSchema.parse(req.body);
-
-      const user = await storage.getUserByEmail(email);
+      const data = loginSchema.parse(req.body);
+      
+      // Find user
+      const user = await storage.getUserByEmail(data.email);
       if (!user) {
-        return res.status(401).json({ message: "Invalid credentials" });
+        return res.status(400).json({ message: "Invalid email or password" });
       }
-
-      const isValidPassword = await bcrypt.compare(password, user.password);
-      if (!isValidPassword) {
-        return res.status(401).json({ message: "Invalid credentials" });
+      
+      // Check password
+      const isMatch = await bcrypt.compare(data.password, user.password);
+      if (!isMatch) {
+        return res.status(400).json({ message: "Invalid email or password" });
       }
-
+      
+      // Set session
       req.session.userId = user.id;
-      res.json({
-        message: "Login successful",
-        user: { id: user.id, email: user.email, name: user.name }
+      
+      // Check if user has completed onboarding
+      const isOnboardingComplete = Boolean(user.name && user.age && user.heightCm && user.weightKg);
+      
+      if (!isOnboardingComplete) {
+        req.session.onboarding = {
+          currentQuestion: {
+            text: "Welcome back! Let's continue where we left off. What's your name?",
+            field: "name",
+          },
+          userData: {},
+        };
+      }
+      
+      res.status(200).json({ 
+        message: "Login successful", 
+        userId: user.id,
+        isOnboardingComplete
       });
     } catch (error) {
-      console.error("Login error:", error);
-      res.status(400).json({ message: "Invalid login data" });
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid input", errors: error.errors });
+      }
+      res.status(500).json({ message: "Server error" });
     }
   });
 
@@ -114,23 +144,417 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (err) {
         return res.status(500).json({ message: "Could not log out" });
       }
-      res.json({ message: "Logout successful" });
+      res.status(200).json({ message: "Logout successful" });
     });
   });
 
-  // Create or get a thread for the assistant
-  app.post("/api/assistant/thread", async (req: Request, res: Response) => {
+  // Onboarding Routes
+  app.get("/api/onboarding/current-question", (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    
+    const onboarding = req.session.onboarding;
+    if (!onboarding) {
+      return res.status(400).json({ message: "No onboarding in progress" });
+    }
+    
+    res.status(200).json({ question: onboarding.currentQuestion });
+  });
+
+  app.post("/api/onboarding/message", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    
+    const { message } = req.body;
+    if (!message) {
+      return res.status(400).json({ message: "Message is required" });
+    }
+    
+    const onboarding = req.session.onboarding;
+    if (!onboarding) {
+      return res.status(400).json({ message: "No onboarding in progress" });
+    }
+    
     try {
-      const { existingThreadId } = req.body;
+      const response = await processOnboardingMessage(
+        message,
+        onboarding.currentQuestion,
+        onboarding.userData
+      );
       
-      const thread = await getOrCreateThread(existingThreadId);
-      res.status(200).json({ threadId: thread.id });
+      // Update session with the new data
+      if (req.session.onboarding) {
+        req.session.onboarding.userData = {
+          ...onboarding.userData,
+          [response.field]: response.value,
+        };
+        
+        // If there's a next question, update it
+        if (response.nextQuestion) {
+          req.session.onboarding.currentQuestion = response.nextQuestion;
+        }
+      }
+      
+      // If onboarding is complete, save user data
+      if (response.isComplete && req.session.onboarding) {
+        const userData = req.session.onboarding.userData;
+        
+        // Update user record with all collected data
+        await storage.updateUser(req.session.userId, {
+          name: userData.name,
+          email: userData.email,
+          age: userData.biometrics?.age,
+          heightCm: userData.biometrics?.heightCm,
+          weightKg: userData.biometrics?.weightKg,
+          gender: userData.gender,
+          fitnessGoal: userData.fitnessGoal,
+          activityLevel: userData.activityLevel,
+          dietaryRestrictions: userData.dietaryRestrictions,
+          gymMemberships: userData.gymMemberships,
+          maxCommuteMinutes: userData.maxCommuteMinutes,
+        });
+        
+        // Calculate TDEE and update user
+        const user = await storage.getUser(req.session.userId);
+        if (user) {
+          const tdee = calculateTDEE(user);
+          await storage.updateUser(req.session.userId, { tdee });
+        }
+        
+        // Clear onboarding data from session
+        delete req.session.onboarding;
+      }
+      
+      res.status(200).json({
+        field: response.field,
+        value: response.value,
+        nextQuestion: response.nextQuestion,
+        isComplete: response.isComplete,
+      });
     } catch (error) {
-      console.error("Error creating/getting thread:", error);
-      res.status(500).json({ message: "Failed to create or retrieve thread" });
+      console.error("Onboarding error:", error);
+      res.status(500).json({ message: "Error processing message" });
     }
   });
 
+  app.post("/api/onboarding/complete", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    
+    try {
+      const data = onboardingSchema.parse(req.body);
+      
+      // Update user with onboarding data
+      await storage.updateUser(req.session.userId, data);
+      
+      // Calculate TDEE and update user
+      const user = await storage.getUser(req.session.userId);
+      if (user) {
+        const tdee = calculateTDEE(user);
+        await storage.updateUser(req.session.userId, { tdee });
+      }
+      
+      // Clear onboarding data from session if it exists
+      if (req.session.onboarding) {
+        delete req.session.onboarding;
+      }
+      
+      res.status(200).json({ message: "Onboarding completed successfully" });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid input", errors: error.errors });
+      }
+      res.status(500).json({ message: "Server error" });
+    }
+  });
+
+  // User Routes
+  app.get("/api/user/profile", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    
+    try {
+      const user = await storage.getUser(req.session.userId);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      // Don't return password
+      const { password, ...userWithoutPassword } = user;
+      
+      res.status(200).json(userWithoutPassword);
+    } catch (error) {
+      res.status(500).json({ message: "Server error" });
+    }
+  });
+
+  // Dashboard Routes
+  app.get("/api/dashboard", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    
+    try {
+      const user = await storage.getUser(req.session.userId);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      // Calculate nutritional needs based on TDEE
+      const tdee = user.tdee || calculateTDEE(user);
+      const macros = calculateMacros(user, tdee);
+      
+      // Get today's date for logs
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      
+      // Get today's health log if it exists
+      const healthLog = await storage.getHealthLogByDate(user.id, today);
+      
+      // Get today's nutrition log if it exists
+      const nutritionLog = await storage.getNutritionLogByDate(user.id, today);
+      
+      // Get today's workout log if it exists
+      const workoutLog = await storage.getWorkoutLogByDate(user.id, today);
+      
+      // Get today's plan or generate a new one
+      let dailyPlan = await storage.getDailyPlanByDate(user.id, today);
+      
+      if (!dailyPlan) {
+        // Generate a new plan
+        const mealPlan = await generateMealPlan(
+          user,
+          macros.protein,
+          macros.carbs,
+          macros.fat,
+          tdee
+        );
+        
+        const workoutPlan = await generateWorkoutPlan(user);
+        
+        const motivation = await generateDailyMotivation(user);
+        
+        // Create a new daily plan
+        dailyPlan = await storage.createDailyPlan({
+          date: today.toISOString().split('T')[0], // Convert Date to string format
+          userId: user.id,
+          meals: mealPlan,
+          workout: workoutPlan,
+          gymRecommendations: workoutPlan.gymRecommendation,
+          motivation,
+        });
+      }
+      
+      // Calculate progress percentages for stats
+      const proteinProgress = nutritionLog?.protein 
+        ? Math.round((nutritionLog.protein / macros.protein) * 100) 
+        : 0;
+      
+      const calorieProgress = nutritionLog?.calories 
+        ? Math.round((nutritionLog.calories / tdee) * 100) 
+        : 0;
+      
+      // Response with dashboard data
+      res.status(200).json({
+        user: {
+          name: user.name,
+          goal: user.fitnessGoal,
+        },
+        stats: {
+          tdee,
+          macros,
+          currentCalories: nutritionLog?.calories || 0,
+          calorieProgress,
+          currentProtein: nutritionLog?.protein || 0,
+          proteinProgress,
+          currentSteps: healthLog?.steps || 0,
+          stepsProgress: healthLog?.steps ? Math.round((healthLog.steps / 10000) * 100) : 0,
+          water: 0, // Would need to track this separately
+          waterProgress: 0,
+        },
+        dailyPlan,
+        healthLog,
+        nutritionLog,
+        workoutLog,
+      });
+    } catch (error) {
+      console.error("Dashboard error:", error);
+      res.status(500).json({ message: "Server error" });
+    }
+  });
+
+  // Health Log Routes
+  app.post("/api/logs/health", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    
+    try {
+      const { date, ...logData } = req.body;
+      const logDate = date ? new Date(date) : new Date();
+      
+      // Check if a log already exists for this date
+      const existingLog = await storage.getHealthLogByDate(req.session.userId, logDate);
+      
+      let healthLog;
+      if (existingLog) {
+        // Update existing log
+        healthLog = await storage.updateHealthLog(existingLog.id, logData);
+      } else {
+        // Create new log
+        healthLog = await storage.createHealthLog({
+          date: logDate.toISOString().split('T')[0], // Format date as string
+          userId: req.session.userId,
+          ...logData,
+        });
+      }
+      
+      res.status(200).json(healthLog);
+    } catch (error) {
+      res.status(500).json({ message: "Server error" });
+    }
+  });
+
+  // Nutrition Log Routes
+  app.post("/api/logs/nutrition", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    
+    try {
+      const { date, ...logData } = req.body;
+      const logDate = date ? new Date(date) : new Date();
+      
+      // Check if a log already exists for this date
+      const existingLog = await storage.getNutritionLogByDate(req.session.userId, logDate);
+      
+      let nutritionLog;
+      if (existingLog) {
+        // Update existing log
+        nutritionLog = await storage.updateNutritionLog(existingLog.id, logData);
+      } else {
+        // Create new log
+        nutritionLog = await storage.createNutritionLog({
+          date: logDate.toISOString().split('T')[0], // Format date as string
+          userId: req.session.userId,
+          ...logData,
+        });
+      }
+      
+      res.status(200).json(nutritionLog);
+    } catch (error) {
+      res.status(500).json({ message: "Server error" });
+    }
+  });
+
+  // Workout Log Routes
+  app.post("/api/logs/workout", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    
+    try {
+      const { date, ...logData } = req.body;
+      const logDate = date ? new Date(date) : new Date();
+      
+      // Check if a log already exists for this date
+      const existingLog = await storage.getWorkoutLogByDate(req.session.userId, logDate);
+      
+      let workoutLog;
+      if (existingLog) {
+        // Update existing log
+        workoutLog = await storage.updateWorkoutLog(existingLog.id, logData);
+      } else {
+        // Create new log
+        workoutLog = await storage.createWorkoutLog({
+          date: logDate.toISOString().split('T')[0], // Format date as string
+          userId: req.session.userId,
+          ...logData,
+        });
+      }
+      
+      res.status(200).json(workoutLog);
+    } catch (error) {
+      res.status(500).json({ message: "Server error" });
+    }
+  });
+
+  // Feedback Route
+  app.post("/api/feedback", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    
+    try {
+      const { mood, message } = req.body;
+      if (!mood) {
+        return res.status(400).json({ message: "Mood is required" });
+      }
+      
+      const user = await storage.getUser(req.session.userId);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      // Process feedback with AI
+      const feedbackResponse = await processFeedback(
+        `Mood: ${mood}. ${message || ''}`,
+        user
+      );
+      
+      res.status(200).json({ 
+        message: "Feedback received",
+        response: feedbackResponse
+      });
+    } catch (error) {
+      res.status(500).json({ message: "Server error" });
+    }
+  });
+  
+  // Meal Photo Analysis Route
+  app.post("/api/meal-analysis", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    
+    try {
+      const { imageData } = req.body;
+      if (!imageData) {
+        return res.status(400).json({ message: "Image data is required" });
+      }
+      
+      // Process the image with OpenAI's GPT-4 Vision
+      const analysisResult = await analyzeMealImage(imageData);
+      
+      // Return the analysis
+      res.status(200).json({
+        message: "Meal analysis complete",
+        result: analysisResult
+      });
+    } catch (error) {
+      console.error("Meal analysis error:", error);
+      res.status(500).json({ message: "Failed to analyze meal image" });
+    }
+  });
+
+  // Assistant Chat API Routes
+  
+  // Initialize or retrieve a thread
+  app.post("/api/assistant/thread", async (req: Request, res: Response) => {
+    try {
+      const { threadId } = req.body;
+      const newThreadId = await getOrCreateThread(threadId);
+      res.status(200).json({ threadId: newThreadId });
+    } catch (error) {
+      console.error("Error creating thread:", error);
+      res.status(500).json({ message: "Failed to create or retrieve thread" });
+    }
+  });
+  
   // Send a message to the assistant
   app.post("/api/assistant/message", async (req: Request, res: Response) => {
     try {
@@ -156,8 +580,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const imageSizeKB = Math.round(img.length / 1024);
           console.log(`Processing image of approximately ${imageSizeKB}KB`);
           
-          // Check if image data is too large
-          if (imageSizeKB > 5000) {
+          // Check if image data is too large (OpenAI limit is ~20MB, but we'll be more conservative)
+          if (imageSizeKB > 5000) { // 5MB limit
             return res.status(413).json({ 
               message: "Image is too large. Please use a smaller image (maximum 5MB)." 
             });
@@ -166,24 +590,68 @@ export async function registerRoutes(app: Express): Promise<Server> {
           validatedImages.push(img);
         } catch (imgError) {
           console.error("Error processing image data:", imgError);
+          // Continue with other images rather than failing completely
         }
       }
       
       try {
-        // Keep user message clean
-        const finalMessage = message || "";
+        // Add the message to the thread with intelligent image analysis
+        console.log(`Adding message to thread ${threadId}`);
         
-        // Add the message to the thread
+        let finalMessage = message || "";
+        
+        // If we have images, detect their types and generate appropriate prompts
+        if (validatedImages.length > 0) {
+          console.log(`Processing ${validatedImages.length} images for intelligent analysis`);
+          
+          // For now, we'll handle the first image for type detection
+          // Upload the first image to get a URL for analysis
+          const { uploadImageToCloudinary } = await import("./services/cloudinary-service");
+          const firstImageUrl = await uploadImageToCloudinary(validatedImages[0]);
+          
+          // Detect the image type
+          const imageType = await detectImageType(firstImageUrl);
+          console.log(`Detected image type: ${imageType}`);
+          
+          // Generate contextual prompt based on image type
+          finalMessage = generateContextualPrompt(imageType, message);
+          console.log(`Generated contextual prompt for ${imageType}`);
+        }
+        
         await addMessageToThread(threadId, finalMessage, validatedImages);
-        console.log("Message added successfully");
+        console.log("Message and images added successfully with contextual analysis");
       } catch (messageError) {
         console.error("Error adding message to thread:", messageError);
-        return res.status(500).json({ 
-          message: "Failed to add message to thread",
+        
+        // Provide more detailed error messages for common issues
+        let errorMessage = "Failed to add message to thread";
+        let statusCode = 500;
+        
+        if (messageError instanceof Error) {
+          const errorText = messageError.message.toLowerCase();
+          
+          // Check for common errors
+          if (errorText.includes('cloudinary')) {
+            errorMessage = "Error uploading image to cloud storage. Please try again or use a different image.";
+            statusCode = 502; // Bad Gateway - issue with external service
+          } else if (errorText.includes('too large') || errorText.includes('file size')) {
+            errorMessage = "Image is too large. Please try with a smaller image.";
+            statusCode = 413; // Request Entity Too Large
+          } else if (errorText.includes('rate limit') || errorText.includes('too many requests')) {
+            errorMessage = "Rate limit exceeded. Please try again in a few moments.";
+            statusCode = 429; // Too Many Requests
+          } else if (errorText.includes('invalid') && errorText.includes('format')) {
+            errorMessage = "Invalid image format. Please try a different image.";
+            statusCode = 400; // Bad Request
+          }
+        }
+        
+        return res.status(statusCode).json({ 
+          message: errorMessage, 
           error: messageError instanceof Error ? messageError.message : String(messageError) 
         });
       }
-
+      
       // Run the assistant on the thread
       console.log(`Running assistant on thread ${threadId}`);
       let run;
@@ -197,21 +665,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
           error: runError instanceof Error ? runError.message : String(runError) 
         });
       }
-
+      
       // Poll for completion
       let runStatus;
       let attempts = 0;
-      const maxAttempts = 30;
-
+      const maxAttempts = 30; // Maximum 30 attempts (30 seconds)
+      
       try {
         runStatus = await checkRunStatus(threadId, run.id);
         console.log(`Initial run status: ${runStatus.status}`);
-
+        
         while (runStatus.status !== "completed" && attempts < maxAttempts) {
+          // Wait for 1 second
           await new Promise(resolve => setTimeout(resolve, 1000));
+          
+          // Check the status again
           runStatus = await checkRunStatus(threadId, run.id);
           attempts++;
-
+          
           if (attempts % 5 === 0) {
             console.log(`Run status after ${attempts} attempts: ${runStatus.status}`);
           }
@@ -223,11 +694,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
           error: statusError instanceof Error ? statusError.message : String(statusError) 
         });
       }
-
+      
       if (runStatus.status !== "completed") {
         return res.status(408).json({ message: "Assistant processing timed out" });
       }
-
+      
       // Get the messages from the thread
       console.log(`Getting messages from thread ${threadId}`);
       let messages;
@@ -240,7 +711,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           error: messagesError instanceof Error ? messagesError.message : String(messagesError) 
         });
       }
-
+      
       res.status(200).json({ messages: messages.data });
     } catch (error) {
       console.error("Error processing message:", error);
@@ -250,8 +721,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     }
   });
-
-  // Get messages from a thread
+  
+  // Get all messages from a thread
   app.get("/api/assistant/messages/:threadId", async (req: Request, res: Response) => {
     try {
       const { threadId } = req.params;
@@ -259,21 +730,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!threadId) {
         return res.status(400).json({ message: "Thread ID is required" });
       }
-
+      
+      // Get the messages from the thread
       const messages = await getMessagesFromThread(threadId);
+      
       res.status(200).json({ messages: messages.data });
     } catch (error) {
-      console.error("Error getting messages:", error);
-      res.status(500).json({ 
-        message: "Failed to get messages", 
-        error: error instanceof Error ? error.message : String(error) 
-      });
+      console.error("Error retrieving messages:", error);
+      res.status(500).json({ message: "Failed to retrieve messages" });
     }
   });
 
-  const httpServer = app.listen(5000, "0.0.0.0", () => {
-    console.log("Server running on port 5000");
-  });
-
+  const httpServer = createServer(app);
   return httpServer;
 }
