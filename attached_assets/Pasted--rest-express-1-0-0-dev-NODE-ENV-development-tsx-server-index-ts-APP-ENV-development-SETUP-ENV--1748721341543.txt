@@ -1,0 +1,37 @@
+> rest-express@1.0.0 dev
+> NODE_ENV=development tsx server/index.ts
+
+APP ENV: development
+SETUP ENV: development
+Setting up Vite development environment
+7:52:31 PM [express] serving on port 5000
+Browserslist: browsers data (caniuse-lite) is 7 months old. Please run:
+  npx update-browserslist-db@latest
+  Why you should do it regularly: https://github.com/browserslist/update-db#readme
+7:52:34 PM [express] GET /api/assistant/messages/thread_lakx8tld05NxNC00EIPzByo4 200 in 386ms :: {"m…
+Processing image of approximately 265KB
+Adding message to thread thread_lakx8tld05NxNC00EIPzByo4
+Processing 1 images for intelligent analysis
+Starting Cloudinary upload process...
+Processing data URL format image
+Uploading to Cloudinary servers...
+Cloudinary upload successful! URL: https://res.cloudinary.com/dssdnhbpk/image/upload/v1748721217/layover-fuel/user_upload_1748721217397.jpg
+Detecting image type for: https://res.cloudinary.com/dssdnhbpk/image/upload/...
+Detected image type: wine_menu
+Detected image type: wine_menu
+Generated contextual prompt for wine_menu
+Processing 1 images...
+Processing image 1: 265KB
+Uploading image 1 to Cloudinary...
+Starting Cloudinary upload process...
+Processing data URL format image
+Uploading to Cloudinary servers...
+Cloudinary upload successful! URL: https://res.cloudinary.com/dssdnhbpk/image/upload/v1748721219/layover-fuel/user_upload_1748721219753.jpg
+Image 1 uploaded successfully to Cloudinary: https://res.cloudinary.com/dssdnhbpk/image/upload/v1748721219/layover-fuel/user_upload_1748721219753.jpg
+Image 1 successfully added to message content
+All 1 images uploaded successfully
+Error adding message to thread: ReferenceError: imageUrl is not defined
+    at addMessageToThread (/home/runner/workspace/server/services/assistant-service.ts:168:45)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async <anonymous> (/home/runner/workspace/server/routes.ts:621:9)
+7:53:40 PM [express] POST /api/assistant/message 500 in 2938ms :: {"message":"Failed to add message …
