@@ -25,7 +25,7 @@ export async function detectImageType(imageUrl: string): Promise<ImageType> {
               type: "text",
               text: `Analyze this image and classify it into one of these categories:
               
-              - "wine_menu": Restaurant wine lists, wine menu pages, wine catalogs
+              - "wine_menu": Restaurant wine lists, wine menu pages, wine catalogs, beverage menus with wine sections
               - "meal_photo": Food dishes, plates of food, meals, desserts
               - "wine_bottle": Wine bottles, wine labels, wine glasses with wine
               - "other": Everything else that doesn't fit the above categories
@@ -41,7 +41,7 @@ export async function detectImageType(imageUrl: string): Promise<ImageType> {
           ]
         }
       ],
-      max_tokens: 10,
+      max_tokens: 15,
       temperature: 0.1
     });
 
@@ -70,11 +70,28 @@ export function generateContextualPrompt(imageType: ImageType, userMessage: stri
   
   switch (imageType) {
     case 'wine_menu':
-      return `You are SomBuddy, a friendly wine-pairing expert. The user has shared a wine menu. First, extract and list the available wines from this menu. Then provide wine pairing recommendations based ONLY on the wines shown in this menu. If the user asks about specific dishes, suggest wines from this menu that would pair well.
+      return `You are SomBuddy, a friendly wine-pairing expert. The user has shared a wine menu. 
+
+CRITICAL: You must carefully read and extract ALL wines from this menu image. Look for:
+- Wine names, producers, vintages, and regions
+- Different sections (Pinot Noir, Cabernet Sauvignon, Italian Reds, etc.)
+- Both bottle and glass prices
+- Pay special attention to small text and varying fonts
+- Include ALL wines listed, not just a few examples
+
+Read the menu systematically from top to bottom, left to right. Extract every single wine entry you can see, including:
+- Producer name
+- Wine name/varietal
+- Vintage year
+- Region/appellation
+- Bin number if shown
+- Prices
+
+Then organize the wines by category/section and provide wine pairing recommendations based ONLY on the wines shown in this menu.
 
 ${baseMessage ? `User's message: ${baseMessage}` : ''}
 
-Please be conversational and friendly while being informative about wine pairings.`;
+Be thorough, accurate, and conversational while being informative about wine pairings.`;
 
     case 'meal_photo':
       return `You are SomBuddy, a friendly wine-pairing expert. The user has shared a photo of their meal. Analyze the dish visually - identify the main ingredients, cooking methods, flavors, and textures you can observe. Then suggest 3-4 specific wines that would pair beautifully with this dish, explaining why each pairing works.
