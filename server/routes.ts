@@ -24,7 +24,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use(
     session({
       store: storage.sessionStore,
-      secret: process.env.SESSION_SECRET || "layover-fuel-secret",
+      secret: process.env.SESSION_SECRET || "sombuddy-secret",
       resave: false,
       saveUninitialized: false,
       cookie: {
@@ -186,18 +186,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       try {
-        // Add the message to the thread
+        // Add the message to the thread with intelligent image analysis
         console.log(`Adding message to thread ${threadId}`);
         
-        // For debugging, log the image data sizes
+        let finalMessage = message || "";
+        
+        // If we have images, detect their types and generate appropriate prompts
         if (validatedImages.length > 0) {
-          console.log(`Processing ${validatedImages.length} images for upload`);
-          console.log(`Images will be uploaded to Cloudinary and then sent to OpenAI`);
+          console.log(`Processing ${validatedImages.length} images for intelligent analysis`);
+          
+          // For now, we'll handle the first image for type detection
+          // Upload the first image to get a URL for analysis
+          const { uploadImageToCloudinary } = await import("./services/cloudinary-service");
+          const firstImageUrl = await uploadImageToCloudinary(validatedImages[0]);
+          
+          // Detect the image type
+          const imageType = await detectImageType(firstImageUrl);
+          console.log(`Detected image type: ${imageType}`);
+          
+          // Generate contextual prompt based on image type
+          finalMessage = generateContextualPrompt(imageType, message);
+          console.log(`Generated contextual prompt for ${imageType}`);
         }
         
-        // When sending just images, don't add default text - the assistant should know what to do
-        await addMessageToThread(threadId, message || "", validatedImages);
-        console.log("Message and images added successfully");
+        await addMessageToThread(threadId, finalMessage, validatedImages);
+        console.log("Message and images added successfully with contextual analysis");
       } catch (messageError) {
         console.error("Error adding message to thread:", messageError);
         

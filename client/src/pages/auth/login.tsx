@@ -39,7 +39,7 @@ export default function Login() {
       if (success) {
         toast({
           title: "Login successful",
-          description: "Welcome back to Layover Fuel!",
+          description: "Welcome back to SomBuddy!",
         });
 
         // Navigate to dashboard or onboarding (determined by auth context)
@@ -55,7 +55,7 @@ export default function Login() {
   return (
     <AuthLayout 
       title="Welcome back" 
-      subtitle="Sign in to your Layover Fuel account"
+      subtitle="Sign in to your SomBuddy account"
       type="login"
     >
       <Form {...form}>
@@ -114,7 +114,7 @@ export default function Login() {
                 className="text-sm text-primary-600 hover:text-primary-800 font-medium"
                 onClick={() => navigate("/tour")}
               >
-                Take an interactive tour of Layover Fuel
+                Take an interactive tour of SomBuddy
               </Button>
               <Button
                 variant="ghost"

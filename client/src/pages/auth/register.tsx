@@ -77,7 +77,7 @@ export default function Register() {
   return (
     <AuthLayout 
       title="Create your account" 
-      subtitle="Get started with Layover Fuel today"
+      subtitle="Get started with SomBuddy today"
       type="register"
     >
       <Form {...form}>

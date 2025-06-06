@@ -7,7 +7,7 @@ export function Sidebar() {
   return (
     <div className="hidden md:flex flex-col w-64 bg-white border-r h-screen sticky top-0">
       <div className="p-6">
-        <h2 className="text-xl font-heading font-bold text-gray-900">Layover Fuel</h2>
+        <h2 className="text-xl font-heading font-bold text-gray-900">SomBuddy</h2>
       </div>
       
       <nav className="flex-1 p-4 space-y-1 overflow-y-auto">

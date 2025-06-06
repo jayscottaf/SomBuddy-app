@@ -244,6 +244,8 @@ export default function ChatPage() {
     },
   });
 
+
+
   // Send a message
   const sendMessage = () => {
     if (!input.trim() && tempImages.length === 0) return;
@@ -328,7 +330,8 @@ export default function ChatPage() {
   return (
     <div className="flex flex-col h-screen bg-merlot text-cream overflow-hidden">
       {/* Fixed Header */}
-      <div className="flex items-center justify-between px-4 py-3 fixed top-0 left-0 right-0 z-10 border-b border-zinc-800 bg-black/15 backdrop-blur-md">
+      <div className="flex items-center justify-between px-4 py-3 fixed top-0 left-0 right-0 z-10 border-b border-zinc-800 bg-black/15 backdrop-blur-md" 
+           style={{ paddingTop: 'max(12px, env(safe-area-inset-top))' }}>
         <div className="flex items-center space-x-2">
           <h1 className="text-3xl font-serif text-gold">SomBuddy</h1>
         </div>
@@ -340,7 +343,8 @@ export default function ChatPage() {
       </div>
 
       {/* Messages container - scrollable area between fixed header and input */}
-      <div className="flex-1 overflow-y-auto p-4 bg-merlot pb-20 pt-20">
+      <div className="flex-1 overflow-y-auto p-4 bg-merlot pb-40" 
+           style={{ paddingTop: 'max(80px, calc(env(safe-area-inset-top) + 68px))' }}>
         <div className="flex flex-col space-y-4">
           {messages.map((message, index) => (
             <div
@@ -459,9 +463,13 @@ export default function ChatPage() {
         </div>
       </div>
 
-      {/* Input area - fixed at bottom */}
-      <div className="p-3 border-t border-zinc-800 bg-black/40 backdrop-blur-lg fixed bottom-0 left-0 right-0 z-20">
-        {/* Display images to be sent - as thumbnails */}
+      <div
+        className="fixed left-0 right-0 z-20 bg-[#3f1b19] backdrop-blur-sm border-t border-gold/30 p-4"
+        style={{ 
+          bottom: '0px',
+          paddingBottom: 'max(16px, calc(env(safe-area-inset-bottom) + 16px))'
+        }}
+      >
         {tempImages.length > 0 && (
           <div className="mb-4">
             <div className="flex items-center mb-2">
@@ -509,7 +517,7 @@ export default function ChatPage() {
             onImageSelect={handleImageSelect}
             className="text-gold hover:text-gold/80 p-2 self-center"
           />
-          <div className="flex-1 bg-[#3f1b19] text-[#ddc393] rounded-3xl overflow-hidden border border-gold/30">
+          <div className="flex-1 bg-[#3f1b19] text-[#ddc393] rounded-2xl overflow-hidden border border-gold/30">
             <textarea
               ref={textareaRef}
               className="w-full bg-[#3f1b19] text-[#ddc393] placeholder:text-[#ddc393]/70 border-none px-4 py-3 focus:outline-none resize-none"
@@ -552,6 +560,6 @@ export default function ChatPage() {
         </div>
       </div>
     </div>
-    
+
   );
 }

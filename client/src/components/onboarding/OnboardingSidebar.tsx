@@ -5,7 +5,7 @@ export function OnboardingSidebar() {
     <div className="w-1/3 bg-primary-600 text-white p-8 flex flex-col justify-between">
       <div>
         <div className="mb-12">
-          <h1 className="font-heading text-3xl font-bold mb-2">Layover Fuel</h1>
+          <h1 className="font-heading text-3xl font-bold mb-2">SomBuddy</h1>
           <p className="text-primary-100 text-lg">Your travel fitness companion</p>
         </div>
         

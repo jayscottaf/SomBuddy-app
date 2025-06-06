@@ -27,7 +27,7 @@ export function OnboardingView() {
           description: "Failed to start onboarding. Please try again.",
           variant: "destructive"
         });
-        setInitialQuestion("Hi there! I'm your Layover Fuel fitness coach. I'll help you stay fit while traveling. Let's get to know each other better. What's your name?");
+        setInitialQuestion("Hi there! I'm your SomBuddy fitness coach. I'll help you stay fit while traveling. Let's get to know each other better. What's your name?");
       } finally {
         setIsLoading(false);
       }
