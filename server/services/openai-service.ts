@@ -217,7 +217,19 @@ export async function processOnboardingMessage(
         });
 
         const parsed = JSON.parse(chatResponse.choices[0].message.content);
-        response.value = Array.isArray(parsed) ? parsed : [];
+        let restrictions: string[] | undefined;
+        if (Array.isArray(parsed)) {
+          restrictions = parsed;
+        } else {
+          for (const key of Object.keys(parsed)) {
+            const value = (parsed as any)[key];
+            if (Array.isArray(value)) {
+              restrictions = value;
+              break;
+            }
+          }
+        }
+        response.value = Array.isArray(restrictions) ? restrictions : [];
       } catch (error) {
         response.value = [];
       }
@@ -240,7 +252,19 @@ export async function processOnboardingMessage(
         });
 
         const parsed = JSON.parse(chatResponse.choices[0].message.content);
-        response.value = Array.isArray(parsed) ? parsed : [];
+        let gyms: string[] | undefined;
+        if (Array.isArray(parsed)) {
+          gyms = parsed;
+        } else {
+          for (const key of Object.keys(parsed)) {
+            const value = (parsed as any)[key];
+            if (Array.isArray(value)) {
+              gyms = value;
+              break;
+            }
+          }
+        }
+        response.value = Array.isArray(gyms) ? gyms : [];
       } catch (error) {
         response.value = [];
       }
