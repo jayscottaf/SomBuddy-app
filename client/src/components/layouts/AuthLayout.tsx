@@ -15,7 +15,7 @@ export function AuthLayout({ children, title, subtitle, type }: AuthLayoutProps)
         <div className="text-center">
           <Link href="/">
             <a className="inline-block">
-              <h1 className="text-3xl font-bold text-primary-600 font-heading">Layover Fuel</h1>
+              <h1 className="text-3xl font-bold text-primary-600 font-heading">SomBuddy</h1>
             </a>
           </Link>
           <h2 className="mt-6 text-2xl font-heading font-bold text-gray-900">{title}</h2>

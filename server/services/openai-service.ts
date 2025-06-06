@@ -19,7 +19,7 @@ export interface OnboardingResponse {
 
 const onboardingQuestions: OnboardingQuestion[] = [
   {
-    text: "Hi there! I'm your Layover Fuel fitness coach. I'll help you stay fit while traveling. Let's get to know each other better. What's your name?",
+    text: "Hi there! I'm your SomBuddy fitness coach. I'll help you stay fit while traveling. Let's get to know each other better. What's your name?",
     field: "name",
   },
   {

@@ -54,7 +54,7 @@ export function AssistantChat() {
         {
           id: "welcome",
           role: "assistant",
-          content: ["Welcome to Layover Fuel! I'm your personal nutrition and fitness assistant. I can help you analyze your meals, suggest workouts, and provide travel-friendly fitness tips. How can I help you today?"],
+          content: ["Welcome to SomBuddy! I'm your personal nutrition and fitness assistant. I can help you analyze your meals, suggest workouts, and provide travel-friendly fitness tips. How can I help you today?"],
         },
       ]);
     } catch (error) {
@@ -94,7 +94,7 @@ export function AssistantChat() {
         formattedMessages.push({
           id: "welcome",
           role: "assistant",
-          content: ["Welcome to Layover Fuel! I'm your personal nutrition and fitness assistant. I can help you analyze your meals, suggest workouts, and provide travel-friendly fitness tips. How can I help you today?"],
+          content: ["Welcome to SomBuddy! I'm your personal nutrition and fitness assistant. I can help you analyze your meals, suggest workouts, and provide travel-friendly fitness tips. How can I help you today?"],
         });
       }
       
@@ -217,7 +217,7 @@ export function AssistantChat() {
           </svg>
         </span>
         <h3 className="font-heading font-semibold text-lg text-gray-900">
-          Layover Fuel Assistant
+          SomBuddy Assistant
         </h3>
       </div>
 
