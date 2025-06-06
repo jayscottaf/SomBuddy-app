@@ -107,7 +107,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   });
 
-
   // User Routes
   app.get("/api/user/profile", async (req: Request, res: Response) => {
     if (!req.session.userId) {
