@@ -332,11 +332,7 @@ export default function ChatPage() {
         <div className="flex items-center space-x-2">
           <h1 className="text-3xl font-serif text-gold">SomBuddy</h1>
         </div>
-        <Link href="/dashboard">
-          <Button className="bg-gold hover:bg-gold/90 text-black font-medium border-none">
-            Dashboard
-          </Button>
-        </Link>
+        {/* Dashboard removed */}
       </div>
 
       {/* Messages container - scrollable area between fixed header and input */}
