@@ -43,7 +43,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use(
     session({
       store: storage.sessionStore,
-      secret: process.env.SESSION_SECRET || "layover-fuel-secret",
+      secret: process.env.SESSION_SECRET || "sombuddy-secret",
       resave: false,
       saveUninitialized: false,
       cookie: {
@@ -79,7 +79,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       req.session.userId = user.id;
       req.session.onboarding = {
         currentQuestion: {
-          text: "Hi there! I'm your Layover Fuel fitness coach. I'll help you stay fit while traveling. Let's get to know each other better. What's your name?",
+          text: "Hi there! I'm your SomBuddy fitness coach. I'll help you stay fit while traveling. Let's get to know each other better. What's your name?",
           field: "name",
         },
         userData: {},

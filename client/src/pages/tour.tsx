@@ -10,7 +10,7 @@ export default function TourPage() {
       <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 p-4">
         <div className="max-w-3xl w-full bg-white rounded-lg shadow-lg overflow-hidden">
           <div className="bg-primary-500 text-white p-6">
-            <h1 className="text-3xl font-bold">Welcome to Layover Fuel</h1>
+            <h1 className="text-3xl font-bold">Welcome to SomBuddy</h1>
             <p className="mt-2 text-primary-100">Your personalized travel fitness companion</p>
           </div>
           
@@ -35,7 +35,7 @@ export default function TourPage() {
               <div className="space-y-4">
                 <h2 className="text-2xl font-bold text-gray-800">Personalized Fitness for Travelers</h2>
                 <p className="text-gray-600">
-                  Layover Fuel helps you maintain your fitness goals while traveling. We create personalized meal
+                  SomBuddy helps you maintain your fitness goals while traveling. We create personalized meal
                   and workout plans tailored to your specific needs, available equipment, and travel constraints.
                 </p>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 my-6">
@@ -145,7 +145,7 @@ export default function TourPage() {
               <div className="space-y-4">
                 <h2 className="text-2xl font-bold text-gray-800">Ready to Start!</h2>
                 <p className="text-gray-600">
-                  You're all set to begin your fitness journey with Layover Fuel. Your personalized recommendations are
+                  You're all set to begin your fitness journey with SomBuddy. Your personalized recommendations are
                   ready, and you can start logging your meals and workouts right away.
                 </p>
                 <div className="my-6">
@@ -214,7 +214,7 @@ export default function TourPage() {
       <div className="bg-primary-500 text-white p-4">
         <div className="container mx-auto">
           <div className="flex items-center justify-between">
-            <h1 className="text-xl font-bold">Layover Fuel</h1>
+            <h1 className="text-xl font-bold">SomBuddy</h1>
             <div className="flex items-center space-x-4">
               <div className="flex items-center">
                 <div className="h-8 w-8 rounded-full bg-primary-300 flex items-center justify-center text-primary-800 font-bold">
