@@ -42,7 +42,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use(
     session({
       store: storage.sessionStore,
-      secret: process.env.SESSION_SECRET || "layover-fuel-secret",
+      secret: process.env.SESSION_SECRET || "sombuddy-secret",
       resave: false,
       saveUninitialized: false,
       cookie: {
