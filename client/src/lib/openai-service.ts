@@ -8,7 +8,7 @@ const openai = new OpenAI({
   dangerouslyAllowBrowser: true // We're using a proxy so this is safe
 });
 
-// The assistant ID for Layover Fuel
+// The assistant ID for SomBuddy
 const ASSISTANT_ID = "asst_hHy68PuBx0Z44uF9cAna4oJD";
 
 // Interface for thread messages

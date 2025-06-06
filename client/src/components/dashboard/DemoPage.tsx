@@ -8,7 +8,7 @@ export default function DemoPage() {
       <div className="container mx-auto px-4 py-8">
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h1 className="text-3xl font-bold text-white">Layover Fuel Dashboard</h1>
+            <h1 className="text-3xl font-bold text-white">SomBuddy Dashboard</h1>
             <p className="text-gray-300 mt-2">Stay on track with your fitness goals while traveling</p>
           </div>
           <Link href="/">
@@ -68,7 +68,7 @@ export default function DemoPage() {
           </p>
           
           <div className="bg-gray-800 rounded-lg shadow-sm p-6 text-center border border-gray-700">
-            <h3 className="text-lg font-semibold mb-3 text-white">Layover Fuel Assistant</h3>
+            <h3 className="text-lg font-semibold mb-3 text-white">SomBuddy Assistant</h3>
             <p className="text-gray-300 mb-6">
               Chat with our AI fitness coach to analyze food photos, get nutrition advice,
               and receive personalized workout recommendations.
@@ -83,9 +83,9 @@ export default function DemoPage() {
         </div>
         
         <div className="mt-12 border-t border-gray-700 pt-8">
-          <h3 className="text-lg font-medium mb-4 text-gray-200">About Layover Fuel</h3>
+          <h3 className="text-lg font-medium mb-4 text-gray-200">About SomBuddy</h3>
           <p className="text-gray-300">
-            Layover Fuel helps travelers maintain their fitness and nutrition goals while on the go.
+            SomBuddy helps travelers maintain their fitness and nutrition goals while on the go.
             Our AI-powered platform creates personalized meal and workout plans that adapt to your travel schedule,
             available equipment, and dietary preferences.
           </p>

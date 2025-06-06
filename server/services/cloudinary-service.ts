@@ -35,7 +35,7 @@ export async function uploadImageToCloudinary(base64Image: string): Promise<stri
     
     // Upload to Cloudinary
     const result = await cloudinary.uploader.upload(uploadData, {
-      folder: 'layover-fuel',
+      folder: 'sombuddy',
       resource_type: 'image',
       // Add a unique filename based on timestamp
       public_id: `user_upload_${Date.now()}`,

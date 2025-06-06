@@ -44,7 +44,7 @@ export function DashboardHeader({ userName, onToggleSidebar }: DashboardHeaderPr
             </svg>
           </button>
           <Link href="/dashboard">
-            <h1 className="text-xl font-heading font-bold text-gray-900 cursor-pointer">Layover Fuel</h1>
+            <h1 className="text-xl font-heading font-bold text-gray-900 cursor-pointer">SomBuddy</h1>
           </Link>
         </div>
         
