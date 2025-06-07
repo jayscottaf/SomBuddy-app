@@ -216,7 +216,11 @@ export async function processOnboardingMessage(
           response_format: { type: "json_object" },
         });
 
-        const parsed = JSON.parse(chatResponse.choices[0].message.content);
+        const content = chatResponse.choices[0].message.content;
+        if (!content) {
+          throw new Error("No content received from OpenAI response");
+        }
+        const parsed = JSON.parse(content);
         let restrictions: string[] | undefined;
         if (Array.isArray(parsed)) {
           restrictions = parsed;
@@ -251,7 +255,11 @@ export async function processOnboardingMessage(
           response_format: { type: "json_object" },
         });
 
-        const parsed = JSON.parse(chatResponse.choices[0].message.content);
+        const content = chatResponse.choices[0].message.content;
+        if (!content) {
+          throw new Error("No content received from OpenAI response");
+        }
+        const parsed = JSON.parse(content);
         let gyms: string[] | undefined;
         if (Array.isArray(parsed)) {
           gyms = parsed;
