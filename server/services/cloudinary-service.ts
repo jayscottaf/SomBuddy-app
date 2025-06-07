@@ -34,12 +34,11 @@ export async function uploadImageToCloudinary(base64Image: string): Promise<stri
     console.log('Uploading to Cloudinary servers...');
     
     // Upload to Cloudinary
-    const result = await cloudinary.uploader.upload(uploadData, {
-      folder: 'sombuddy',
-      resource_type: 'image',
-      // Add a unique filename based on timestamp
-      public_id: `user_upload_${Date.now()}`,
-    });
+const result = await cloudinary.uploader.upload(uploadData, {
+  folder: 'sombuddy-app',
+  resource_type: 'image',
+  public_id: `user_upload_${Date.now()}`,
+});
     
     console.log(`Cloudinary upload successful! URL: ${result.secure_url}`);
     
