@@ -4,18 +4,7 @@ import { storage } from "./storage";
 import session from "express-session";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
-import { registerSchema, loginSchema, onboardingSchema } from "@shared/schema";
-import fetch from "node-fetch";
-import { 
-  calculateTDEE, 
-  calculateMacros 
-} from "./services/tdee-service";
-import { 
-  processOnboardingMessage, 
-  generateDailyMotivation,
-  processFeedback,
-  type OnboardingQuestion 
-} from "./services/openai-service";
+import { registerSchema, loginSchema } from "@shared/schema";
 import {
   getOrCreateThread,
   addMessageToThread,
@@ -23,17 +12,10 @@ import {
   checkRunStatus,
   getMessagesFromThread
 } from "./services/assistant-service";
-import { generateMealPlan } from "./services/meal-service";
-import { generateWorkoutPlan } from "./services/workout-service";
-import { analyzeMealImage } from "./services/image-analysis-service";
 
 declare module "express-session" {
   interface SessionData {
     userId: number;
-    onboarding?: {
-      currentQuestion: OnboardingQuestion;
-      userData: any;
-    };
   }
 }
 
@@ -74,15 +56,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         name: "",
       });
       
-      // Start onboarding
       req.session.userId = user.id;
-      req.session.onboarding = {
-        currentQuestion: {
-          text: "Hi there! I'm your Layover Fuel fitness coach. I'll help you stay fit while traveling. Let's get to know each other better. What's your name?",
-          field: "name",
-        },
-        userData: {},
-      };
       
       res.status(201).json({ message: "User created", userId: user.id });
     } catch (error) {
@@ -112,23 +86,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Set session
       req.session.userId = user.id;
       
-      // Check if user has completed onboarding
-      const isOnboardingComplete = Boolean(user.name && user.age && user.heightCm && user.weightKg);
-      
-      if (!isOnboardingComplete) {
-        req.session.onboarding = {
-          currentQuestion: {
-            text: "Welcome back! Let's continue where we left off. What's your name?",
-            field: "name",
-          },
-          userData: {},
-        };
-      }
-      
-      res.status(200).json({ 
-        message: "Login successful", 
-        userId: user.id,
-        isOnboardingComplete
+      res.status(200).json({
+        message: "Login successful",
+        userId: user.id
       });
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -145,129 +105,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       res.status(200).json({ message: "Logout successful" });
     });
-  });
-
-  // Onboarding Routes
-  app.get("/api/onboarding/current-question", (req: Request, res: Response) => {
-    if (!req.session.userId) {
-      return res.status(401).json({ message: "Unauthorized" });
-    }
-    
-    const onboarding = req.session.onboarding;
-    if (!onboarding) {
-      return res.status(400).json({ message: "No onboarding in progress" });
-    }
-    
-    res.status(200).json({ question: onboarding.currentQuestion });
-  });
-
-  app.post("/api/onboarding/message", async (req: Request, res: Response) => {
-    if (!req.session.userId) {
-      return res.status(401).json({ message: "Unauthorized" });
-    }
-    
-    const { message } = req.body;
-    if (!message) {
-      return res.status(400).json({ message: "Message is required" });
-    }
-    
-    const onboarding = req.session.onboarding;
-    if (!onboarding) {
-      return res.status(400).json({ message: "No onboarding in progress" });
-    }
-    
-    try {
-      const response = await processOnboardingMessage(
-        message,
-        onboarding.currentQuestion,
-        onboarding.userData
-      );
-      
-      // Update session with the new data
-      if (req.session.onboarding) {
-        req.session.onboarding.userData = {
-          ...onboarding.userData,
-          [response.field]: response.value,
-        };
-        
-        // If there's a next question, update it
-        if (response.nextQuestion) {
-          req.session.onboarding.currentQuestion = response.nextQuestion;
-        }
-      }
-      
-      // If onboarding is complete, save user data
-      if (response.isComplete && req.session.onboarding) {
-        const userData = req.session.onboarding.userData;
-        
-        // Update user record with all collected data
-        await storage.updateUser(req.session.userId, {
-          name: userData.name,
-          email: userData.email,
-          age: userData.biometrics?.age,
-          heightCm: userData.biometrics?.heightCm,
-          weightKg: userData.biometrics?.weightKg,
-          gender: userData.gender,
-          fitnessGoal: userData.fitnessGoal,
-          activityLevel: userData.activityLevel,
-          dietaryRestrictions: userData.dietaryRestrictions,
-          gymMemberships: userData.gymMemberships,
-          maxCommuteMinutes: userData.maxCommuteMinutes,
-        });
-        
-        // Calculate TDEE and update user
-        const user = await storage.getUser(req.session.userId);
-        if (user) {
-          const tdee = calculateTDEE(user);
-          await storage.updateUser(req.session.userId, { tdee });
-        }
-        
-        // Clear onboarding data from session
-        delete req.session.onboarding;
-      }
-      
-      res.status(200).json({
-        field: response.field,
-        value: response.value,
-        nextQuestion: response.nextQuestion,
-        isComplete: response.isComplete,
-      });
-    } catch (error) {
-      console.error("Onboarding error:", error);
-      res.status(500).json({ message: "Error processing message" });
-    }
-  });
-
-  app.post("/api/onboarding/complete", async (req: Request, res: Response) => {
-    if (!req.session.userId) {
-      return res.status(401).json({ message: "Unauthorized" });
-    }
-    
-    try {
-      const data = onboardingSchema.parse(req.body);
-      
-      // Update user with onboarding data
-      await storage.updateUser(req.session.userId, data);
-      
-      // Calculate TDEE and update user
-      const user = await storage.getUser(req.session.userId);
-      if (user) {
-        const tdee = calculateTDEE(user);
-        await storage.updateUser(req.session.userId, { tdee });
-      }
-      
-      // Clear onboarding data from session if it exists
-      if (req.session.onboarding) {
-        delete req.session.onboarding;
-      }
-      
-      res.status(200).json({ message: "Onboarding completed successfully" });
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        return res.status(400).json({ message: "Invalid input", errors: error.errors });
-      }
-      res.status(500).json({ message: "Server error" });
-    }
   });
 
   // User Routes
@@ -291,254 +128,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Dashboard Routes
-  app.get("/api/dashboard", async (req: Request, res: Response) => {
-    if (!req.session.userId) {
-      return res.status(401).json({ message: "Unauthorized" });
-    }
-    
-    try {
-      const user = await storage.getUser(req.session.userId);
-      if (!user) {
-        return res.status(404).json({ message: "User not found" });
-      }
-      
-      // Calculate nutritional needs based on TDEE
-      const tdee = user.tdee || calculateTDEE(user);
-      const macros = calculateMacros(user, tdee);
-      
-      // Get today's date for logs
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      
-      // Get today's health log if it exists
-      const healthLog = await storage.getHealthLogByDate(user.id, today);
-      
-      // Get today's nutrition log if it exists
-      const nutritionLog = await storage.getNutritionLogByDate(user.id, today);
-      
-      // Get today's workout log if it exists
-      const workoutLog = await storage.getWorkoutLogByDate(user.id, today);
-      
-      // Get today's plan or generate a new one
-      let dailyPlan = await storage.getDailyPlanByDate(user.id, today);
-      
-      if (!dailyPlan) {
-        // Generate a new plan
-        const mealPlan = await generateMealPlan(
-          user,
-          macros.protein,
-          macros.carbs,
-          macros.fat,
-          tdee
-        );
-        
-        const workoutPlan = await generateWorkoutPlan(user);
-        
-        const motivation = await generateDailyMotivation(user);
-        
-        // Create a new daily plan
-        dailyPlan = await storage.createDailyPlan({
-          date: today.toISOString().split('T')[0], // Convert Date to string format
-          userId: user.id,
-          meals: mealPlan,
-          workout: workoutPlan,
-          gymRecommendations: workoutPlan.gymRecommendation,
-          motivation,
-        });
-      }
-      
-      // Calculate progress percentages for stats
-      const proteinProgress = nutritionLog?.protein 
-        ? Math.round((nutritionLog.protein / macros.protein) * 100) 
-        : 0;
-      
-      const calorieProgress = nutritionLog?.calories 
-        ? Math.round((nutritionLog.calories / tdee) * 100) 
-        : 0;
-      
-      // Response with dashboard data
-      res.status(200).json({
-        user: {
-          name: user.name,
-          goal: user.fitnessGoal,
-        },
-        stats: {
-          tdee,
-          macros,
-          currentCalories: nutritionLog?.calories || 0,
-          calorieProgress,
-          currentProtein: nutritionLog?.protein || 0,
-          proteinProgress,
-          currentSteps: healthLog?.steps || 0,
-          stepsProgress: healthLog?.steps ? Math.round((healthLog.steps / 10000) * 100) : 0,
-          water: 0, // Would need to track this separately
-          waterProgress: 0,
-        },
-        dailyPlan,
-        healthLog,
-        nutritionLog,
-        workoutLog,
-      });
-    } catch (error) {
-      console.error("Dashboard error:", error);
-      res.status(500).json({ message: "Server error" });
-    }
-  });
 
-  // Health Log Routes
-  app.post("/api/logs/health", async (req: Request, res: Response) => {
-    if (!req.session.userId) {
-      return res.status(401).json({ message: "Unauthorized" });
-    }
-    
-    try {
-      const { date, ...logData } = req.body;
-      const logDate = date ? new Date(date) : new Date();
-      
-      // Check if a log already exists for this date
-      const existingLog = await storage.getHealthLogByDate(req.session.userId, logDate);
-      
-      let healthLog;
-      if (existingLog) {
-        // Update existing log
-        healthLog = await storage.updateHealthLog(existingLog.id, logData);
-      } else {
-        // Create new log
-        healthLog = await storage.createHealthLog({
-          date: logDate.toISOString().split('T')[0], // Format date as string
-          userId: req.session.userId,
-          ...logData,
-        });
-      }
-      
-      res.status(200).json(healthLog);
-    } catch (error) {
-      res.status(500).json({ message: "Server error" });
-    }
-  });
 
-  // Nutrition Log Routes
-  app.post("/api/logs/nutrition", async (req: Request, res: Response) => {
-    if (!req.session.userId) {
-      return res.status(401).json({ message: "Unauthorized" });
-    }
-    
-    try {
-      const { date, ...logData } = req.body;
-      const logDate = date ? new Date(date) : new Date();
-      
-      // Check if a log already exists for this date
-      const existingLog = await storage.getNutritionLogByDate(req.session.userId, logDate);
-      
-      let nutritionLog;
-      if (existingLog) {
-        // Update existing log
-        nutritionLog = await storage.updateNutritionLog(existingLog.id, logData);
-      } else {
-        // Create new log
-        nutritionLog = await storage.createNutritionLog({
-          date: logDate.toISOString().split('T')[0], // Format date as string
-          userId: req.session.userId,
-          ...logData,
-        });
-      }
-      
-      res.status(200).json(nutritionLog);
-    } catch (error) {
-      res.status(500).json({ message: "Server error" });
-    }
-  });
-
-  // Workout Log Routes
-  app.post("/api/logs/workout", async (req: Request, res: Response) => {
-    if (!req.session.userId) {
-      return res.status(401).json({ message: "Unauthorized" });
-    }
-    
-    try {
-      const { date, ...logData } = req.body;
-      const logDate = date ? new Date(date) : new Date();
-      
-      // Check if a log already exists for this date
-      const existingLog = await storage.getWorkoutLogByDate(req.session.userId, logDate);
-      
-      let workoutLog;
-      if (existingLog) {
-        // Update existing log
-        workoutLog = await storage.updateWorkoutLog(existingLog.id, logData);
-      } else {
-        // Create new log
-        workoutLog = await storage.createWorkoutLog({
-          date: logDate.toISOString().split('T')[0], // Format date as string
-          userId: req.session.userId,
-          ...logData,
-        });
-      }
-      
-      res.status(200).json(workoutLog);
-    } catch (error) {
-      res.status(500).json({ message: "Server error" });
-    }
-  });
-
-  // Feedback Route
-  app.post("/api/feedback", async (req: Request, res: Response) => {
-    if (!req.session.userId) {
-      return res.status(401).json({ message: "Unauthorized" });
-    }
-    
-    try {
-      const { mood, message } = req.body;
-      if (!mood) {
-        return res.status(400).json({ message: "Mood is required" });
-      }
-      
-      const user = await storage.getUser(req.session.userId);
-      if (!user) {
-        return res.status(404).json({ message: "User not found" });
-      }
-      
-      // Process feedback with AI
-      const feedbackResponse = await processFeedback(
-        `Mood: ${mood}. ${message || ''}`,
-        user
-      );
-      
-      res.status(200).json({ 
-        message: "Feedback received",
-        response: feedbackResponse
-      });
-    } catch (error) {
-      res.status(500).json({ message: "Server error" });
-    }
-  });
-  
-  // Meal Photo Analysis Route
-  app.post("/api/meal-analysis", async (req: Request, res: Response) => {
-    if (!req.session.userId) {
-      return res.status(401).json({ message: "Unauthorized" });
-    }
-    
-    try {
-      const { imageData } = req.body;
-      if (!imageData) {
-        return res.status(400).json({ message: "Image data is required" });
-      }
-      
-      // Process the image with OpenAI's GPT-4 Vision
-      const analysisResult = await analyzeMealImage(imageData);
-      
-      // Return the analysis
-      res.status(200).json({
-        message: "Meal analysis complete",
-        result: analysisResult
-      });
-    } catch (error) {
-      console.error("Meal analysis error:", error);
-      res.status(500).json({ message: "Failed to analyze meal image" });
-    }
-  });
 
   // Assistant Chat API Routes
   
@@ -594,18 +185,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       try {
-        // Add the message to the thread
+        // Add the message to the thread with intelligent image analysis
         console.log(`Adding message to thread ${threadId}`);
         
-        // For debugging, log the image data sizes
+        let finalMessage = message || "";
+        
+        // If we have images, detect their types and generate appropriate prompts
         if (validatedImages.length > 0) {
-          console.log(`Processing ${validatedImages.length} images for upload`);
-          console.log(`Images will be uploaded to Cloudinary and then sent to OpenAI`);
+          console.log(`Processing ${validatedImages.length} images for intelligent analysis`);
+          
+          // For now, we'll handle the first image for type detection
+          // Upload the first image to get a URL for analysis
+          const { uploadImageToCloudinary } = await import("./services/cloudinary-service");
+          const firstImageUrl = await uploadImageToCloudinary(validatedImages[0]);
+          
+          // Detect the image type
+          const imageType = await detectImageType(firstImageUrl);
+          console.log(`Detected image type: ${imageType}`);
+          
+          // Generate contextual prompt based on image type
+          finalMessage = generateContextualPrompt(imageType, message);
+          console.log(`Generated contextual prompt for ${imageType}`);
         }
         
-        // When sending just images, don't add default text - the assistant should know what to do
-        await addMessageToThread(threadId, message || "", validatedImages);
-        console.log("Message and images added successfully");
+        await addMessageToThread(threadId, finalMessage, validatedImages);
+        console.log("Message and images added successfully with contextual analysis");
       } catch (messageError) {
         console.error("Error adding message to thread:", messageError);
         

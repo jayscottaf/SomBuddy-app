@@ -15,7 +15,7 @@ async function testUpload() {
   try {
     console.log('Testing Cloudinary upload...');
     const result = await cloudinary.uploader.upload(sampleBase64, {
-      folder: 'layover-fuel-test',
+      folder: 'sombuddy-test',
     });
     console.log('Upload successful!');
     console.log('Public URL:', result.secure_url);

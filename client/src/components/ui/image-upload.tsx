@@ -24,10 +24,10 @@ export function ImageUpload({ onImageSelect, className = "" }: ImageUploadProps)
           // Create a canvas to resize the image
           const canvas = document.createElement('canvas');
           
-          // Calculate new dimensions - max width/height of 600px (reduced from 800px)
+          // Calculate new dimensions - max width/height of 1200px for better text readability
           let width = img.width;
           let height = img.height;
-          const MAX_SIZE = 600;
+          const MAX_SIZE = 1200;
           
           if (width > height) {
             if (width > MAX_SIZE) {
@@ -44,12 +44,17 @@ export function ImageUpload({ onImageSelect, className = "" }: ImageUploadProps)
           canvas.width = width;
           canvas.height = height;
           
-          // Draw the resized image
+          // Draw the resized image with better quality settings
           const ctx = canvas.getContext('2d');
-          ctx?.drawImage(img, 0, 0, width, height);
+          if (ctx) {
+            // Enable image smoothing for better quality
+            ctx.imageSmoothingEnabled = true;
+            ctx.imageSmoothingQuality = 'high';
+            ctx.drawImage(img, 0, 0, width, height);
+          }
           
-          // Get the compressed data URL with increased compression (JPEG format, 0.6 quality)
-          const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.6);
+          // Get the compressed data URL with higher quality (JPEG format, 0.85 quality)
+          const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.85);
           resolve(compressedDataUrl);
         };
         
@@ -103,8 +108,8 @@ export function ImageUpload({ onImageSelect, className = "" }: ImageUploadProps)
       const compressedBlob = await fetch(compressedImageDataUrl).then(r => r.blob());
       const compressedFile = new File([compressedBlob], file.name, { type: 'image/jpeg' });
       
-      // Check if the compressed image is still too large (max 5MB for server)
-      if (compressedBlob.size > 5 * 1024 * 1024) {
+      // Check if the compressed image is still too large (max 8MB for server to allow higher quality)
+      if (compressedBlob.size > 8 * 1024 * 1024) {
         console.warn("Compressed image still too large:", compressedBlob.size);
         toast({
           title: "Image too large",

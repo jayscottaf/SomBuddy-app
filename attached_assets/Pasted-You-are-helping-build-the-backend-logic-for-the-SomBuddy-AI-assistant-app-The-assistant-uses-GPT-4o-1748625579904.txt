@@ -1,0 +1,45 @@
+You are helping build the backend logic for the SomBuddy AI assistant app. The assistant uses GPT-4o to analyze user-uploaded images and provide wine pairing suggestions.
+
+📸 Users may upload:
+- Wine menus (e.g., restaurant lists)
+- Meal photos (e.g., steak, pasta)
+- Wine bottle labels (e.g., to understand what wine they’re drinking)
+
+❗The current issue:
+The app always sends a hardcoded prompt (e.g., assuming the image is a wine menu), which causes GPT-4o to hallucinate if the image is actually a meal or wine bottle.
+
+✅ Goal:
+Create a smart system that detects the image type before crafting the GPT prompt, so responses are accurate and contextual.
+
+🔧 Your Tasks:
+1. Add a helper function called `detectImageType(fileId)` using GPT-4o Vision. It should:
+   - Accept a `fileId` from an uploaded image
+   - Prompt GPT to classify the image as one of:
+     - "wine menu"
+     - "meal photo"
+     - "wine bottle"
+     - "other"
+   - Return that tag as a string
+   - Fallback to `"other"` if classification fails
+
+2. Modify the message-sending logic so that:
+   - When an image is uploaded, it is first uploaded to OpenAI and `fileId` is retrieved
+   - `detectImageType(fileId)` is run
+   - Based on the result, choose the correct GPT-4o prompt:
+     - If `"wine menu"` → extract menu text, then pair based only on wines listed
+     - If `"meal photo"` → describe the dish visually and suggest matching wines
+     - If `"wine bottle"` → identify the wine and suggest what foods go best with it
+     - If `"other"` → respond with a friendly fallback like: “This looks interesting! Let me know if it's a meal, menu, or wine bottle and I’ll help pair it properly.”
+
+3. If needed, log the detected image type and the generated prompt for debugging.
+
+4. Make the entire process invisible to the user — they should never need to select an image type manually.
+
+📋 Please answer these clarifying questions before proceeding:
+- Where exactly is the message-sending logic located — in a backend API route (like `/api/assistant/message`) or directly in the frontend (e.g., `ChatPage.tsx`)?
+- Is the image upload already sending the image to OpenAI and retrieving a `file_id`, or does it use base64 right now?
+- Would you like to store the image type (e.g., in session, thread metadata, or console log) for future reference or debugging?
+- If image type detection returns `"other"`, should the assistant respond automatically, or prompt the user with buttons (e.g., “Is this a meal, menu, or wine bottle?”)?
+
+🎯 Objective:
+Refactor the system to route image-based requests through GPT-4o’s vision with the right intent and prompt, without any user intervention. Keep it modular and production-ready.

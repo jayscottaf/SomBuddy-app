@@ -19,7 +19,7 @@ export interface OnboardingResponse {
 
 const onboardingQuestions: OnboardingQuestion[] = [
   {
-    text: "Hi there! I'm your Layover Fuel fitness coach. I'll help you stay fit while traveling. Let's get to know each other better. What's your name?",
+    text: "Hi there! I'm your SomBuddy fitness coach. I'll help you stay fit while traveling. Let's get to know each other better. What's your name?",
     field: "name",
   },
   {
@@ -216,7 +216,11 @@ export async function processOnboardingMessage(
           response_format: { type: "json_object" },
         });
 
-        const parsed = JSON.parse(chatResponse.choices[0].message.content);
+        const content = chatResponse.choices[0].message.content;
+        if (!content) {
+          throw new Error("No content received from OpenAI response");
+        }
+        const parsed = JSON.parse(content);
         let restrictions: string[] | undefined;
         if (Array.isArray(parsed)) {
           restrictions = parsed;
@@ -251,7 +255,11 @@ export async function processOnboardingMessage(
           response_format: { type: "json_object" },
         });
 
-        const parsed = JSON.parse(chatResponse.choices[0].message.content);
+        const content = chatResponse.choices[0].message.content;
+        if (!content) {
+          throw new Error("No content received from OpenAI response");
+        }
+        const parsed = JSON.parse(content);
         let gyms: string[] | undefined;
         if (Array.isArray(parsed)) {
           gyms = parsed;
